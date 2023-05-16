@@ -75,7 +75,8 @@ const App = () => {
     setItems(updatedItems);
 
     const selectedItem = items.find((item) => item.id === id);
-    if (selectedItem.checked && true) {
+    console.log(selectedItem)
+    if (!selectedItem.checked) {
       toast.success(`${selectedItem.item} is checked`);
     } else {
       toast(`${selectedItem.item} is unchecked`);
