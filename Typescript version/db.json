@@ -1,0 +1,24 @@
+{
+  "items": [
+    {
+      "id": 1,
+      "checked": false,
+      "item": "Sleep"
+    },
+    {
+      "id": 2,
+      "checked": false,
+      "item": "Swim"
+    },
+    {
+      "id": 3,
+      "checked": false,
+      "item": "Eat Fruit"
+    },
+    {
+      "id": 4,
+      "checked": false,
+      "item": "Goto Supermarket"
+    }
+  ]
+}
