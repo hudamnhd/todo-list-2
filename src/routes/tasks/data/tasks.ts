@@ -311,7 +311,7 @@ export const action = async ({ request }) => {
           cachedData[indexData] = mergeData;
           await setCache(cacheKey, [...cachedData]);
 
-          const toastMessage = getToastMessage("update", submission.title);
+          const toastMessage = getToastMessage("update", submission.id);
           toast(toastMessage);
 
           return { success, submission };
