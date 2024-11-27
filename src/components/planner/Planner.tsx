@@ -16,7 +16,7 @@ import { monitorForElements } from "@atlaskit/pragmatic-drag-and-drop/element/ad
 
 export interface PlannerProps extends React.HTMLAttributes<HTMLDivElement> {
   initialResources: Resource[];
-  initialAppointments: AppointmentType[]; 
+  initialAppointments: AppointmentType[];
 }
 
 const Planner: React.FC<PlannerProps> = ({
@@ -93,12 +93,15 @@ const CalendarContent: React.FC<CalendarContentProps> = ({ ...props }) => {
 
   return (
     <div className="flex max-h-[calc(80vh_-_theme(spacing.16))] flex-col  ">
-      <div className="calendar-scroll flex-grow overflow-auto">
+      <div className="calendar-scroll flex-grow overflow-y-auto">
         <Table>
           <Timeline />
           <TableBody>
             {resources.map((resource) => (
-              <TableRow key={resource.id}>
+              <TableRow
+                key={resource.id}
+                className="bg-bg dark:bg-darkBg text-text dark:text-darkText dark:border-darkText border border-border"
+              >
                 <ResourceTableCell resourceItem={resource} />
                 {timeLabels?.map((label, index) => (
                   <DropTableCell

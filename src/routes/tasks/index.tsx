@@ -31,16 +31,16 @@ export default function Tasks() {
 
   return (
     <Layout>
-      {taskOnProgress && (
+      {/*{taskOnProgress && (
         <Timer task={taskOnProgress} handler={handleDoneTask} />
-      )}
+      )}*/}
       <Outlet />
       <Layout.Body>
         <div className="mb-2 flex items-center justify-between space-y-2">
           <div>
             <h2 className="text-2xl font-bold tracking-tight">Welcome back!</h2>
             <p className="text-muted-foreground">
-              Here&apos;s a list of your tasks for this month!
+              Here&apos;s a list of your tasks for this today!
             </p>
           </div>
         </div>

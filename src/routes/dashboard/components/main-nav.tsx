@@ -1,4 +1,6 @@
 import { cn } from "@/lib/utils";
+import { buttonVariants } from "@/components/ui/button";
+
 import { NavLink } from "react-router-dom";
 import React from "react";
 
@@ -14,21 +16,15 @@ export function MainNav({
       <NavLink
         to="/"
         className={({ isActive }) =>
-          [
-            isActive ? "text-primary" : "text-muted-foreground",
-            "text-sm font-medium  transition-colors hover:text-primary",
-          ].join(" ")
+          cn(buttonVariants({ variant: isActive ? "default" : "neutral" }))
         }
       >
-        Overview
+        Planner
       </NavLink>
       <NavLink
         to="/tasks"
         className={({ isActive }) =>
-          [
-            isActive ? "text-primary" : "text-muted-foreground",
-            "text-sm font-medium  transition-colors hover:text-primary",
-          ].join(" ")
+          cn(buttonVariants({ variant: isActive ? "default" : "neutral" }))
         }
       >
         Tasks

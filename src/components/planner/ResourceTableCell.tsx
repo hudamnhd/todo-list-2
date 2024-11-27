@@ -17,7 +17,13 @@ const ResourceTableCell: FC<ResourceTableCellProps> = ({
   ...props
 }) => {
   return (
-    <TableCell className={cn(className,"sticky left-0 z-10 border-y bg-background")} {...props}>
+    <TableCell
+      className={cn(
+        className,
+        "sticky left-0 z-10 border-y bg-bg dark:bg-darkBg text-text dark:text-darkText dark:border-darkBorder border-border",
+      )}
+      {...props}
+    >
       <div className="flex items-center space-x-4   ">
         <div className="relative h-10 w-10">
           <img

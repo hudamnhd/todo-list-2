@@ -1,3 +1,4 @@
+import { DataTableAddData } from "../components/data-table-add-data";
 import * as React from "react";
 import {
   ColumnDef,
@@ -68,7 +69,7 @@ export function DataTable<TData, TValue>({
   return (
     <div className="space-y-4">
       <DataTableToolbar table={table} />
-      <div className="rounded-md border h-[59vh] overflow-y-auto">
+      <div className="rounded-md border max-h-[59vh] overflow-y-auto">
         <Table>
           <TableHeader className="sticky top-0 bg-background shadow-sm z-10">
             {table.getHeaderGroups().map((headerGroup) => (
@@ -99,6 +100,7 @@ export function DataTable<TData, TValue>({
                 <TableRow
                   key={row.id}
                   data-state={row.getIsSelected() && "selected"}
+                  className="bg-bg dark:bg-darkBg text-text dark:text-darkText dark:border-darkText border border-border"
                 >
                   {row.getVisibleCells().map((cell, index) => (
                     <TableCell
@@ -115,12 +117,17 @@ export function DataTable<TData, TValue>({
                 </TableRow>
               ))
             ) : (
-              <TableRow>
-                <TableCell
-                  colSpan={columns.length}
-                  className="h-24 text-center"
-                >
-                  No results.
+              <TableRow className="bg-bg dark:bg-darkBg text-text dark:text-darkText dark:border-darkText border border-border">
+                <TableCell colSpan={columns.length} className="text-center">
+                  <div className="flex flex-col items center justify-center gap-2">
+                    <p>
+                      Tidak ada tugas saat ini. Mari tambahkan tugas pertama
+                      Anda untuk memulai hari yang produktif!
+                    </p>{" "}
+                    <div className="max-w-[50%]">
+                      <DataTableAddData />
+                    </div>
+                  </div>
                 </TableCell>
               </TableRow>
             )}

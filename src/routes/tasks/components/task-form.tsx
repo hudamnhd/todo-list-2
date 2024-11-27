@@ -152,7 +152,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ children }) => {
                 {isPending && <Spinner className="h-5 w-5 text-white mr-1.5" />}{" "}
                 {task ? "Save" : "Create"} task
               </Button>
-              <Button type="reset" variant="outline">
+              <Button type="reset" variant="neutral">
                 Reset
               </Button>
             </div>

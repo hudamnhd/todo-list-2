@@ -1,14 +1,9 @@
 import { ColumnDef } from "@tanstack/react-table";
 import dayjs from "dayjs";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Label } from "@/components/ui/label";
 import { DataTableColumnHeader } from "./data-table-column-header";
+import React from "react";
 import { DataTableRowActions } from "./data-table-row-actions";
 
 import { labels, priorities, statuses } from "../data/data";
@@ -40,17 +35,6 @@ export const columns: ColumnDef<Task>[] = [
     enableHiding: false,
   },
   {
-    accessorKey: "id",
-    header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Task" />
-    ),
-    cell: ({ row }) => (
-      <div className="w-[80px] uppercase">task-{row.getValue("id")}</div>
-    ),
-    enableSorting: false,
-    enableHiding: false,
-  },
-  {
     accessorKey: "title",
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="Title" />
@@ -60,7 +44,7 @@ export const columns: ColumnDef<Task>[] = [
 
       return (
         <div className="flex space-x-2">
-          {label && <Badge variant="outline">{label.label}</Badge>}
+          {label && <Badge variant="neutral">{label.label}</Badge>}
           <span className="max-w-32 truncate font-medium sm:max-w-72 md:max-w-[31rem]">
             {row.getValue("title")}
           </span>
@@ -84,10 +68,7 @@ export const columns: ColumnDef<Task>[] = [
 
       return (
         <div className="flex w-[100px] items-center">
-          {status.icon && (
-            <status.icon className="mr-2 h-4 w-4 text-muted-foreground" />
-          )}
-          <span>{status.label}</span>
+          <StatusBadge status={status.value} />
         </div>
       );
     },
@@ -111,10 +92,7 @@ export const columns: ColumnDef<Task>[] = [
 
       return (
         <div className="flex items-center">
-          {priority.icon && (
-            <priority.icon className="mr-2 h-4 w-4 text-muted-foreground" />
-          )}
-          <span>{priority.label}</span>
+          <PriorityBadge priority={priority} />
         </div>
       );
     },
@@ -176,3 +154,72 @@ export const columns: ColumnDef<Task>[] = [
     cell: ({ row }) => <DataTableRowActions row={row} />,
   },
 ];
+
+import {
+  CheckCircledIcon,
+  CircleIcon,
+  CrossCircledIcon,
+  StopwatchIcon,
+} from "@radix-ui/react-icons";
+
+const StatusBadge: React.FC<{ status: string }> = ({ status }) => {
+  const statusStyles: Record<
+    string,
+    { label: string; color: string; icon: React.FC }
+  > = {
+    draft: {
+      label: "Draft",
+      color: "bg-gray-200 text-gray-800 border-gray-800",
+      icon: CircleIcon,
+    },
+    progress: {
+      label: "Progress",
+      color: "bg-yellow-200 text-yellow-800 border-yellow-800",
+      icon: StopwatchIcon,
+    },
+    done: {
+      label: "Done",
+      color: "bg-green-200 text-green-800 border-green-800",
+      icon: CheckCircledIcon,
+    },
+    cancel: {
+      label: "Cancel",
+      color: "bg-red-200 text-red-800 border-red-800",
+      icon: CrossCircledIcon,
+    },
+  };
+
+  const currentStatus = statusStyles[status] || {
+    label: "Unknown",
+    color: "bg-gray-100 text-gray-600 border-gray-600",
+    icon: CircleIcon,
+  };
+
+  return (
+    <div
+      className={`flex items-center gap-1 px-3 py-1 border rounded-base shadow-light dark:shadow-dark ${currentStatus.color}`}
+    >
+      <currentStatus.icon className="h-4 w-4" />
+      <span className="text-xs font-bold">{currentStatus.label}</span>
+    </div>
+  );
+};
+
+const PriorityBadge: React.FC<{
+  priority: { label: string; value: string; icon: React.ElementType };
+}> = ({ priority }) => {
+  const colors = {
+    low: "bg-green-200 text-green-900 border-green-600",
+    medium: "bg-yellow-200 text-yellow-900 border-yellow-600",
+    high: "bg-red-200 text-red-900 border-red-600",
+  };
+
+  return (
+    <div
+      className={`flex items-center gap-1 px-3 py-1 border rounded-base shadow-light dark:shadow-dark  ${colors[priority.value]}`}
+    >
+      <priority.icon className="h-4 w-4" />
+      <span className="text-xs font-bold">{priority.label}</span>
+    </div>
+  );
+};

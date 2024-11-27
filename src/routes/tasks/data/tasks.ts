@@ -14,7 +14,7 @@ const generateTaskId = async () => {
   if (cachedData && cachedData.length > 0) {
     const lastTask = cachedData[cachedData.length - 1];
 
-    const lastIdNumber = parseInt(lastTask.id.split("-")[1], 10);
+    const lastIdNumber = parseInt(lastTask.id, 10);
 
     taskIdCounter = lastIdNumber + 1;
   }
@@ -311,7 +311,7 @@ export const action = async ({ request }) => {
           cachedData[indexData] = mergeData;
           await setCache(cacheKey, [...cachedData]);
 
-          const toastMessage = getToastMessage("update", submission.id);
+          const toastMessage = getToastMessage("update", originalData.title);
           toast(toastMessage);
 
           return { success, submission };

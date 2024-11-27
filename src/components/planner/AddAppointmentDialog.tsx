@@ -35,7 +35,7 @@ import { Input } from "../ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
 import { TimePicker } from "../ui/time-picker";
 import { Calendar } from "../ui/calendar";
-import { CalendarIcon } from "lucide-react";
+import { CalendarIcon, PlusIcon } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -55,14 +55,17 @@ const AddAppointmentDialog: React.FC = () => {
       title: "",
       start: new Date(),
       end: new Date(new Date().getTime() + 60 * 60 * 1000),
-      resourceId: "",
+      resourceId: "f504a05e-250e-45aa-aa1c-8a60034930c6",
+      details: {
+        service: "",
+      },
     },
   });
   function onSubmit(values: z.infer<typeof createAppointmentSchema>) {
     const id = crypto.randomUUID();
     const newAppointment: AppointmentType = {
       details: {
-        service: "Music",
+        service: values.details.service,
       },
       order: 0,
       id: id,
@@ -88,19 +91,23 @@ const AddAppointmentDialog: React.FC = () => {
     });
     setTimeout(() => {
       setIsOpened(false);
-    }, 1000);
+    }, 500);
   }
   return (
     <Dialog open={isOpened} onOpenChange={setIsOpened}>
       <DialogTrigger asChild>
-        <Button variant="outline">Add Appointment</Button>
+        <Button className="h-8">
+          <PlusIcon className="mr-2 h-4 w-4" />
+          Add Appointment
+        </Button>
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Add Appointment</DialogTitle>
+          <DialogDescription>Add Appointment data</DialogDescription>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <FormField
               control={form.control}
               name="title"
@@ -109,6 +116,19 @@ const AddAppointmentDialog: React.FC = () => {
                   <FormLabel>Title</FormLabel>
                   <FormControl>
                     <Input placeholder="Appointment title" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="details.service"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Service</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Service" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

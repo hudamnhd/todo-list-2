@@ -29,11 +29,11 @@ export const labels = [
 ];
 
 export const statuses = [
-  {
-    value: "backlog",
-    label: "Backlog",
-    icon: QuestionMarkCircledIcon,
-  },
+  // {
+  //   value: "backlog",
+  //   label: "Backlog",
+  //   icon: QuestionMarkCircledIcon,
+  // },
   {
     value: "draft",
     label: "Draft",

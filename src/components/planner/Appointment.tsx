@@ -73,6 +73,9 @@ const Appointment: React.FC<AppointmentProps> = ({
     resolver: zodResolver(updateAppointmentSchema),
     defaultValues: {
       title: appointment.title,
+      details: {
+        service: appointment.details.service,
+      },
       start: new Date(appointment.start) ?? new Date(),
       end: new Date(appointment.end) ?? new Date(),
     },
@@ -86,9 +89,15 @@ const Appointment: React.FC<AppointmentProps> = ({
   }
 
   return (
-    <Card ref={ref} className="hover:cursor-grab   ">
+    <Card
+      ref={ref}
+      className="hover:cursor-grab bg-bg dark:bg-darkBg text-text dark:text-darkText"
+    >
       <CardHeader className="flex flex-row items-center justify-between p-1">
-        <Badge variant={"outline"} className="  truncate pl-2 text-xs">
+        <Badge
+          variant="neutral"
+          className="bg-main dark:bg-main dark:text-black border-2 border-border dark:border-darkBorder shadow-light dark:shadow-dark hover:translate-x-boxShadowX hover:translate-y-boxShadowY hover:shadow-none dark:hover:shadow-none  truncate pl-2 text-xs"
+        >
           {appointment.details.service}
         </Badge>
         <Popover>
@@ -98,7 +107,7 @@ const Appointment: React.FC<AppointmentProps> = ({
             </div>
           </PopoverTrigger>
           <PopoverContent className="w-fit">
-            <Card className="border-none p-0 shadow-none w-fit">
+            <Card className="border-none px-2 shadow-none w-fit">
               <CardHeader className="p-0">
                 <CardTitle className="text-xs">{appointment.title}</CardTitle>
                 <CardDescription className="text-xs">
@@ -106,11 +115,11 @@ const Appointment: React.FC<AppointmentProps> = ({
                   {format(new Date(appointment.end), "MMM dd yyyy HH:mm")}
                 </CardDescription>
               </CardHeader>
-              <CardContent className="w-fit">
-                <Form {...form} >
+              <CardContent className="w-full p-2">
+                <Form {...form}>
                   <form
                     onSubmit={form.handleSubmit(onSubmit)}
-                    className="space-y-8"
+                    className="space-y-4"
                   >
                     <FormField
                       control={form.control}
@@ -120,6 +129,19 @@ const Appointment: React.FC<AppointmentProps> = ({
                           <FormLabel>Title</FormLabel>
                           <FormControl>
                             <Input placeholder="Title" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="details.service"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Service</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Service" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>

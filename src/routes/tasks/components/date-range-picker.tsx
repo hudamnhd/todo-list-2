@@ -1,84 +1,49 @@
 "use client";
 
-import * as React from "react";
-import { CalendarIcon } from "@radix-ui/react-icons";
-import { addDays, format } from "date-fns";
+import React, { useEffect, useState } from "react";
+import { DateRangePicker } from "@/components/ui/date-range-picker";
 import { DateRange } from "react-day-picker";
-
-import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
-import { Calendar } from "@/components/ui/calendar";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import { Table } from "@tanstack/react-table";
 
 interface DataTableToolbarProps<TData> {
   table: Table<TData>;
 }
 
+import { startOfDay, endOfDay, endOfWeek, startOfWeek } from "date-fns";
 export function CalendarDateRangePicker({
   table,
-  className,
 }: {
   className: React.HTMLAttributes<HTMLDivElement>;
   table: DataTableToolbarProps<TData>;
 }) {
-  const [date, setDate] = React.useState<DateRange | undefined>({
-    // from: addDays(new Date(), -3), // 3 hari sebelumnya
-    // to: addDays(new Date(), 4), // 4 hari setelahnya
+  const [range, setRange] = useState<DateRange>({
+    from: startOfDay(new Date()), // Awal hari ini
+    to: endOfDay(new Date()), // Akhir hari ini
   });
-
-  const handleApplyFilter = (date) => {
-    const column = table.getColumn("createdAt"); // Ambil kolom "createdAt"
-    if (column) {
-      column.setFilterValue(date); // Set filter value pada kolom
-    }
+  const handleDateRangeUpdate = (range: DateRange) => {
+    const from = range.from;
+    const to = range.to ?? endOfDay(range.from as Date);
+    setRange({
+      from: from,
+      to: to,
+    });
   };
 
+  useEffect(() => {
+    // setDateRange(range);
+    const column = table.getColumn("createdAt"); // Ambil kolom "createdAt"
+    if (column) {
+      column.setFilterValue(range); // Set filter value pada kolom
+    }
+  }, [range]);
+
   return (
-    <div className={cn("grid gap-2", className)}>
-      <Popover>
-        <PopoverTrigger asChild>
-          <Button
-            id="date"
-            variant={"outline"}
-            size="sm"
-            className={cn(
-              "w-fit justify-start text-left font-normal h-8",
-              !date && "text-muted-foreground",
-            )}
-          >
-            <CalendarIcon className="mr-2 h-4 w-4" />
-            {date?.from ? (
-              date.to ? (
-                <>
-                  {format(date.from, "LLL dd, y")} -{" "}
-                  {format(date.to, "LLL dd, y")}
-                </>
-              ) : (
-                format(date.from, "LLL dd, y")
-              )
-            ) : (
-              <span>Pick a date</span>
-            )}
-          </Button>
-        </PopoverTrigger>
-        <PopoverContent className="w-auto p-0" align="end">
-          <Calendar
-            initialFocus
-            mode="range"
-            defaultMonth={date?.from}
-            selected={date}
-            onSelect={(e) => {
-              handleApplyFilter(e);
-              setDate(e);
-            }}
-            numberOfMonths={2}
-          />
-        </PopoverContent>
-      </Popover>
-    </div>
+    <DateRangePicker
+      onUpdate={(value) => handleDateRangeUpdate(value.range)}
+      initialDateFrom={range.from}
+      initialDateTo={range.to}
+      align="start"
+      showCompare={false}
+    />
   );
 }

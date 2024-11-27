@@ -1,32 +1,52 @@
 import { Appointment } from "@/models/Appointment";
+import { getCache, setCache } from "@/lib/cache-client";
+const cacheKey = `appointments`;
 
 export class AppointmentService {
-    private appointments: Appointment[];
+  private appointments: Appointment[];
 
-    constructor(initialAppointments: Appointment[]) {
-        this.appointments = initialAppointments;
-    }
+  constructor() {
+    this.appointments = [];
+  }
 
-    createAppointment(appointment: Appointment) {
-        debugger
-        this.appointments.push(appointment);
-        return this.appointments;
-    }
+  async initialize(initialAppointments: Appointment[]) {
+    // Cek apakah data ada di localforage, jika tidak gunakan initialAppointments
 
-    updateAppointment(updatedAppointment: Appointment) {
-        const index = this.appointments.findIndex(a => a.id === updatedAppointment.id);
-        if (index !== -1) {
-            this.appointments[index] = { ...this.appointments[index], ...updatedAppointment };
-        }
-        return this.appointments;
-    }
+    const storedAppointments = await getCache<Appointment[]>(cacheKey);
+    this.appointments = storedAppointments || initialAppointments;
+  }
 
-    deleteAppointment(id: string) {
-        this.appointments = this.appointments.filter(a => a.id !== id);
-        return this.appointments;
-    }
+  private async saveToLocalForage() {
+    await setCache(cacheKey, this.appointments);
+  }
 
-    getAppointments() {
-        return [...this.appointments];
+  async createAppointment(appointment: Appointment) {
+    this.appointments.push(appointment);
+    await this.saveToLocalForage();
+    return this.appointments;
+  }
+
+  async updateAppointment(updatedAppointment: Appointment) {
+    const index = this.appointments.findIndex(
+      (a) => a.id === updatedAppointment.id,
+    );
+    if (index !== -1) {
+      this.appointments[index] = {
+        ...this.appointments[index],
+        ...updatedAppointment,
+      };
+      await this.saveToLocalForage();
     }
+    return this.appointments;
+  }
+
+  async deleteAppointment(id: string) {
+    this.appointments = this.appointments.filter((a) => a.id !== id);
+    await this.saveToLocalForage();
+    return this.appointments;
+  }
+
+  getAppointments() {
+    return [...this.appointments];
+  }
 }

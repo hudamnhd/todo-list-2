@@ -1,10 +1,6 @@
 import * as React from "react";
 
 import { cn } from "@/lib/utils";
-{
-  /*<div className='relative w-full overflow-auto'>
-    </div>*/
-}
 
 const Table = React.forwardRef<
   HTMLTableElement,
@@ -12,7 +8,10 @@ const Table = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <table
     ref={ref}
-    className={cn("w-full caption-bottom text-sm", className)}
+    className={cn(
+      "w-full caption-bottom border-border dark:border-darkBorder border-2 text-sm",
+      className,
+    )}
     {...props}
   />
 ));
@@ -45,7 +44,7 @@ const TableFooter = React.forwardRef<
   <tfoot
     ref={ref}
     className={cn(
-      "border-t bg-muted/50 font-medium [&>tr]:last:border-b-0",
+      "border-t border-t-black bg-main font-base [&>tr]:last:border-b-0",
       className,
     )}
     {...props}
@@ -60,7 +59,7 @@ const TableRow = React.forwardRef<
   <tr
     ref={ref}
     className={cn(
-      "border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted",
+      "border-b border-border text-text dark:border-darkBorder transition-colors bg-main font-base data-[state=selected]:bg-white dark:data-[state=selected]:bg-secondaryBlack dark:data-[state=selected]:text-darkText",
       className,
     )}
     {...props}
@@ -75,7 +74,7 @@ const TableHead = React.forwardRef<
   <th
     ref={ref}
     className={cn(
-      "h-10 px-2 text-left align-middle font-medium text-muted-foreground [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]",
+      "h-12 px-4 text-left align-middle font-heading text-black [&:has([role=checkbox])]:pr-0",
       className,
     )}
     {...props}
@@ -90,7 +89,7 @@ const TableCell = React.forwardRef<
   <td
     ref={ref}
     className={cn(
-      "p-2 align-middle [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]",
+      "p-4 align-middle font-base [&:has([role=checkbox])]:pr-0",
       className,
     )}
     {...props}
@@ -104,7 +103,7 @@ const TableCaption = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <caption
     ref={ref}
-    className={cn("mt-4 text-sm text-muted-foreground", className)}
+    className={cn("mt-4 text-sm text-black font-base", className)}
     {...props}
   />
 ));
