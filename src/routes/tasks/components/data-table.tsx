@@ -66,12 +66,13 @@ export function DataTable<TData, TValue>({
     getFacetedUniqueValues: getFacetedUniqueValues(),
   });
 
+  const isSM = window.innerWidth < 680;
   return (
     <div className="space-y-4">
       <DataTableToolbar table={table} />
       <div className="rounded-md border max-h-[59vh] overflow-y-auto">
         <Table>
-          <TableHeader className="sticky top-0 bg-background shadow-sm z-10">
+          <TableHeader className="sticky top-0 bg-main shadow-sm z-10">
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
                 {headerGroup.headers.map((header, index) => {
@@ -119,12 +120,12 @@ export function DataTable<TData, TValue>({
             ) : (
               <TableRow className="bg-bg dark:bg-darkBg text-text dark:text-darkText dark:border-darkText border border-border">
                 <TableCell colSpan={columns.length} className="text-center">
-                  <div className="flex flex-col items center justify-center gap-2">
+                  <div className="">
                     <p>
                       Tidak ada tugas saat ini. Mari tambahkan tugas pertama
                       Anda untuk memulai hari yang produktif!
                     </p>{" "}
-                    <div className="max-w-[50%]">
+                    <div className="">
                       <DataTableAddData />
                     </div>
                   </div>

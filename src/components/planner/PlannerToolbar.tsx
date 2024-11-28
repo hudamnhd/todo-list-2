@@ -37,7 +37,10 @@ const CalendarToolbar: React.FC<CalendarToolbarProps> = ({
 
   return (
     <div
-      className={cn("flex items-center justify-end space-x-2", className)}
+      className={cn(
+        "sm:flex items-center justify-end space-y-2 sm:space-x-2",
+        className,
+      )}
       {...props}
     >
       <AddAppointmentDialog />

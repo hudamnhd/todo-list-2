@@ -142,7 +142,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ children }) => {
               )}
             </Field>
 
-            <div className="grid grid-cols-2 gap-2 mt-4">
+            <div className="grid sm:grid-cols-2 gap-2 mt-4">
               <Button
                 name="intent"
                 value={task ? "update-task" : "add-task"}

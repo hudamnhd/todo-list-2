@@ -117,16 +117,16 @@ export function DataTableToolbar<TData>({
           </Badge>
 
           {doneCount === 0 && (
-            <div className="text-sm text-red-500">
+            <Badge className="text-sm shadow-light dark:shadow-dark bg-red-300 dark:bg-red-300">
               You need to complete at least {MIN_TARGET} tasks today. Keep
               going!
-            </div>
+            </Badge>
           )}
           <Badge className="text-sm shadow-light dark:shadow-dark bg-amber-300 dark:bg-amber-300">
             {totalTimeMessage}
           </Badge>
 
-          <Badge className="text-sm shadow-light dark:shadow-dark bg-red-300 dark:bg-red-300">
+          <Badge className="text-sm shadow-light dark:shadow-dark bg-sky-300 dark:bg-sky-300">
             {achievementMessage}
           </Badge>
           <div className="grid gap-2 mt-2">
