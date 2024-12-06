@@ -12,7 +12,7 @@ export type Task = {
 	subtasks?: Subtask[];
 	isRunning: boolean;
 	isDone: boolean;
-	createdAt: string; // ISO date string
+	created_at: string; // ISO date string
 	completedAt?: string; // ISO date string
 };
 

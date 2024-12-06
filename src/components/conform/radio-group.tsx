@@ -29,7 +29,7 @@ export function RadioGroupConform({
       />
       <RadioGroup
         ref={radioGroupRef}
-        className="grid sm:flex sm:gap-3"
+        className="flex items-center gap-4"
         value={control.value ?? ""}
         onValueChange={control.change}
         onBlur={control.blur}

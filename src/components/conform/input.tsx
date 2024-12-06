@@ -1,19 +1,23 @@
-import { FieldMetadata, getInputProps } from '@conform-to/react';
-import { Input } from '../ui/input';
-import { ComponentProps } from 'react';
+import { FieldMetadata, getInputProps } from "@conform-to/react";
+import { Input } from "@/components/ui/input";
+import { ComponentProps } from "react";
 
 export const InputConform = ({
-	meta,
-	type,
-	...props
+  meta,
+  type,
+  ...props
 }: {
-	meta: FieldMetadata<string>;
-	type: Parameters<typeof getInputProps>[1]['type'];
+  meta: FieldMetadata<string>;
+  type: Parameters<typeof getInputProps>[1]["type"];
 } & ComponentProps<typeof Input>) => {
-	return (
-		<Input
-			{...getInputProps(meta, { type, ariaAttributes: true })}
-			{...props}
-		/>
-	);
+  const inputProps = getInputProps(meta, { type, ariaAttributes: true });
+  const { key, ...restInputProps } = inputProps; // Pisahkan key dari properti lainnya
+
+  return (
+    <Input
+      key={key} // Tetapkan key langsung ke elemen JSX
+      {...restInputProps} // Sebarkan properti lain
+      {...props} // Tambahkan properti tambahan dari pengguna komponen
+    />
+  );
 };

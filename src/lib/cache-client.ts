@@ -1,6 +1,10 @@
 import localforage from "localforage";
 
-export const setCache = async (
+const app_store = localforage.createInstance({
+  name: "react-app",
+});
+// Fungsi untuk menyimpan data ke cache dengan waktu kedaluwarsa (default 10 menit)
+export const set_cache = async (
   key: string,
   value: any,
   ttl: number = 3153600000,
@@ -8,24 +12,24 @@ export const setCache = async (
   try {
     const expiresAt = Date.now() + ttl;
     const cacheData = { value, expiresAt };
-    await localforage.setItem(key, cacheData);
+    await app_store.setItem(key, cacheData);
   } catch (error) {
     console.error("Failed to set cache:", error);
   }
 };
 
 // Fungsi untuk mengambil data dari cache dan memvalidasi waktu kedaluwarsa
-export const getCache = async (key: string) => {
+export const get_cache = async (key: string) => {
   try {
     const cacheData: { value: any; expiresAt: number } | null =
-      await localforage.getItem(key);
+      await app_store.getItem(key);
     if (cacheData) {
       const { value, expiresAt } = cacheData;
       if (Date.now() < expiresAt) {
         return value;
       } else {
         // Hapus cache jika sudah kedaluwarsa
-        await deleteCache(key);
+        await delete_cache(key);
         return null;
       }
     }
@@ -37,9 +41,9 @@ export const getCache = async (key: string) => {
 };
 
 // Fungsi untuk menghapus data dari cache
-export const deleteCache = async (key: string) => {
+export const delete_cache = async (key: string) => {
   try {
-    await localforage.removeItem(key);
+    await app_store.removeItem(key);
   } catch (error) {
     console.error("Failed to delete cache:", error);
   }
@@ -47,7 +51,7 @@ export const deleteCache = async (key: string) => {
 
 export const deleteMultipleCaches = async (keys: string[]) => {
   try {
-    const deletePromises = keys.map((key) => localforage.removeItem(key));
+    const deletePromises = keys.map((key) => app_store.removeItem(key));
     await Promise.all(deletePromises);
     console.log("Selected caches deleted successfully.");
   } catch (error) {
@@ -58,7 +62,7 @@ export const deleteMultipleCaches = async (keys: string[]) => {
 // Fungsi untuk menghapus semua data dari cache
 export const deleteAllCache = async () => {
   try {
-    await localforage.clear();
+    await app_store.clear();
   } catch (error) {
     console.error("Failed to delete all cache:", error);
   }
@@ -67,9 +71,9 @@ export const deleteAllCache = async () => {
 // Fungsi untuk menghapus cache berdasarkan kategori (prefix tertentu)
 export const deleteCacheByCategory = async (categoryPrefix: string) => {
   try {
-    await localforage.iterate((value, key) => {
+    await app_store.iterate((value, key) => {
       if (key.startsWith(categoryPrefix)) {
-        localforage.removeItem(key);
+        app_store.removeItem(key);
       }
     });
   } catch (error) {
@@ -83,7 +87,7 @@ export const mutateCache = async (
   mutator: (value: any) => any,
 ): Promise<{ success: boolean; error: string | null }> => {
   try {
-    const currentValue = await getCache(key);
+    const currentValue = await get_cache(key);
 
     // Jika data tidak ada di cache, kembalikan status gagal
     if (!currentValue) {
@@ -94,7 +98,7 @@ export const mutateCache = async (
     const newValue = mutator(currentValue);
 
     // Simpan nilai baru ke cache
-    await setCache(key, newValue);
+    await set_cache(key, newValue);
 
     // Kembalikan status berhasil
     return { success: true, error: null };
@@ -109,9 +113,9 @@ export const findInCache = async (
   predicate: (value: any, key: string) => boolean,
 ) => {
   try {
-    const keys = await localforage.keys();
+    const keys = await app_store.keys();
     for (const key of keys) {
-      const value = await getCache(key);
+      const value = await get_cache(key);
       if (predicate(value, key)) {
         return { key, value };
       }

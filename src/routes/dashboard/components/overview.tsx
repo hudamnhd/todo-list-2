@@ -13,7 +13,7 @@ const summarizeTasks = (tasks: Task[]) => {
   const monthlySummary: Record<string, { done: number; cancel: number }> = {};
 
   tasks.forEach((task) => {
-    const monthName = new Date(task.createdAt).toLocaleString("en-US", {
+    const monthName = new Date(task.created_at).toLocaleString("en-US", {
       month: "long",
       year: "numeric",
     });
@@ -137,7 +137,7 @@ const summarizeTasksByWeek = (tasks: Task[]) => {
   > = {};
 
   tasks.forEach((task) => {
-    const date = new Date(task.createdAt);
+    const date = new Date(task.created_at);
     const weekNumber = getWeekNumber(date); // Menghitung minggu dalam tahun
     const year = date.getFullYear();
     // const weekKey = `W-${weekNumber}, ${year}`;

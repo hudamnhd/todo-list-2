@@ -1,16 +1,17 @@
-import { StrictMode } from "react";
+import React, { useEffect, useState, StrictMode } from "react";
+import Kanban from "./routes/kanban/index.tsx";
 import { createRoot } from "react-dom/client";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
-import Root from "./routes/dashboard/page.tsx";
-import Index from "./routes/index.tsx";
-import TaskList from "./routes/tasks/index.tsx";
+import App from "./routes/todo.tsx";
+
 import {
-  loader as loaderTasks,
-  loaderTaskId,
-  action as actionTasks,
-} from "./routes/tasks/data/tasks.ts";
-import TaskForm from "./routes/tasks/components/task-form.tsx";
-import DataTableDeleteData from "./routes/tasks/components/data-table-delete-data.tsx";
+  loader as loaderTodo,
+  loaderTodoId,
+  action as actionTodo,
+} from "./routes/daily/data/tasks.ts";
+import TodoList from "./routes/daily/index.tsx";
+import TodoForm from "./routes/daily/components/task-form.tsx";
+import DeleteTodo from "./routes/daily/components/data-table-delete-data.tsx";
 import ErrorPage from "./error-page";
 import NotFoundError from "./404.tsx";
 import "./index.css";
@@ -18,29 +19,27 @@ import "./index.css";
 const router = createBrowserRouter([
   {
     path: "/",
-    element: <Root />,
     errorElement: <ErrorPage />,
     children: [
       {
         path: "/",
-        loader: loaderTasks,
-        element: <Index />,
+        // element: <Kanban />,
+        element: <App />,
       },
       {
-        path: "/tasks",
-        element: <TaskList />,
-        loader: loaderTasks,
-        action: actionTasks,
+        path: "/daily",
+        element: <TodoList />,
+        loader: loaderTodo,
+        action: actionTodo,
         children: [
           {
-            path: "/tasks/:id",
-            element: <TaskForm />,
-            loader: loaderTaskId,
+            path: "/daily/:id",
+            element: <TodoForm />,
+            loader: loaderTodoId,
           },
           {
-            path: "/tasks/delete",
-            element: <DataTableDeleteData />,
-            // loader: loaderTaskId,
+            path: "/daily/delete",
+            element: <DeleteTodo />,
           },
         ],
       },
@@ -54,12 +53,18 @@ const router = createBrowserRouter([
 
 import { Toaster } from "@/components/ui/toaster";
 import { ThemeProvider } from "@/components/custom/theme-provider";
+import store from "./store/store";
+import { Provider } from "react-redux";
 
-createRoot(document.getElementById("root")!).render(
-  <StrictMode>
-    <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
-      <RouterProvider router={router} />
-      <Toaster />
-    </ThemeProvider>
-  </StrictMode>,
-);
+const Main = () => {
+  return (
+    <Provider store={store}>
+      <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
+        <RouterProvider router={router} />
+        <Toaster />
+      </ThemeProvider>
+    </Provider>
+  );
+};
+
+createRoot(document.getElementById("root")!).render(<Main />);
