@@ -22,6 +22,9 @@ export default defineConfig({
         type: "module",
         navigateFallback: "index.html",
       },
+      workbox: {
+        globPatterns: ["**/*.{js,css,html}", "**/*.{svg,png,jpg,gif}"],
+      },
     }),
   ],
   resolve: {
