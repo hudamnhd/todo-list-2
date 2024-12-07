@@ -106,12 +106,18 @@ export interface SetTasksAction {
   payload: Task[];
 }
 
+export interface UpdateColoumnTask {
+  type: "UPDATE_COLUMN_TASK";
+  payload: { updated_task: Task[]; key?: number };
+}
+
 export type TaskActionTypes =
   | AddTaskAction
   | AddSubTaskAction
   | DeleteSubTaskAction
   | UpdateSubTaskAction
   | UpdateSessionTaskAction
+  | UpdateColoumnTask
   | UpdateTaskAction
   | SetTasksAction
   | DeleteTaskAction;
@@ -212,6 +218,14 @@ export const deleteTask = ({
     payload: { title, id, key },
   };
 };
+
+export const updateTasksColumn = ({
+  updated_task,
+  key,
+}: { updated_task: Task[]; key?: number }): UpdateColoumnTask => ({
+  type: "UPDATE_COLUMN_TASK",
+  payload: { updated_task, key },
+});
 
 export const setTasks = (todos: Task[]): SetTasksAction => ({
   type: "SET_TASKS",

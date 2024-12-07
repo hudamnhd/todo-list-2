@@ -239,7 +239,6 @@ const todoReducer = (
     }
     case "UPDATE_TASK": {
       const date_key = get_formatted_date(action.payload?.key);
-      console.warn("DEBUGPRINT[3]: slice.ts:190: action=", action);
       const formatted_date = date_key.key;
 
       // Ambil data task yang sudah ada untuk tanggal yang ditentukan
@@ -281,6 +280,18 @@ const todoReducer = (
         // Jika task tidak ditemukan, kembalikan state lama tanpa perubahan
         return state;
       }
+    }
+    case "UPDATE_COLUMN_TASK": {
+      const date_key = get_formatted_date(action.payload?.key);
+      const formatted_date = date_key.key;
+      const updated_task = action.payload.updated_task || [];
+
+      return {
+        tasks: {
+          ...state.tasks,
+          [formatted_date]: updated_task,
+        },
+      };
     }
     case "DELETE_TASK": {
       const date_key = get_formatted_date(action.payload?.key);

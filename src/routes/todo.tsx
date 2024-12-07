@@ -1,5 +1,6 @@
-import React from "react";
 import { RenderTracker } from "@/components/render-tracker.tsx";
+import { Badge } from "@/components/ui/badge";
+import React from "react";
 import { useAppSelector, useAppDispatch } from "@/store/hooks";
 import store, { initial_daily_tasks } from "@/store/store";
 import {
@@ -10,10 +11,12 @@ import {
   deleteSubTask,
   updateSubTask,
   updateSessionTask,
+  updateTasksColumn,
   Task,
   setTasks,
 } from "@/features/daily-tasks/actions";
 import { faker } from "@faker-js/faker";
+import { get_cache, set_cache } from "@/lib/cache-client";
 
 // Fungsi untuk membuat satu todo
 const generateTodo = (date) => {
@@ -84,6 +87,7 @@ async function load_data_daily_tasks() {
     spinner.style.display = "flex";
   }
   const initialTasks = await initial_daily_tasks();
+  // const cache_log = await get_cache("log-daily-tasks");
 
   // const testData = generate_todos_by_date("2024-11-22", 30); // Data untuk 7 hari mulai dari 1 Desember 2024
   // store.dispatch(setTasks(testData));
@@ -212,6 +216,15 @@ const TodoNavigator = ({ data }) => {
           all_session={all_session}
           streak_data={streak_data}
         />
+        <KanbanBoard
+          tasks={todos}
+          goToNextDate={goToNextDate}
+          goToPreviousDate={goToPreviousDate}
+          date={date_key}
+          active_task={active_task}
+          all_session={all_session}
+          streak_data={streak_data}
+        />
         {/*<Debug data={todos} />*/}
       </div>
     </div>
@@ -223,6 +236,7 @@ const TaskFirst = () => {
 
   React.useEffect(() => {
     load_data_daily_tasks();
+    askNotificationPermission();
   }, []);
 
   if (!initial_data)
@@ -389,7 +403,6 @@ const TaskList: React.FC<TaskProps> = ({ todos }) => {
   );
 };
 
-// import { KanbanBoard } from "@/components/kanban/KanbanBoard";
 import {
   AlertDialogProvider,
   useAlert,
@@ -969,7 +982,7 @@ const ContainerList = ({ todos, date, active_task }) => {
     <React.Fragment>
       {todos.length > 0 ? (
         <React.Fragment>
-          <TodoView todos={todos} date={date} active_task={active_task} />
+          {/*<TodoView todos={todos} date={date} active_task={active_task} />*/}
         </React.Fragment>
       ) : (
         <EmptyTodo date={date} />
@@ -3327,7 +3340,7 @@ function Card05({
   return (
     <div
       className="relative h-full rounded-3xl p-6
-            bg-white dark:bg-black/5 
+            bg-white dark:bg-black/5
             border border-zinc-200 dark:border-zinc-800
             hover:border-zinc-300 dark:hover:border-zinc-700
             transition-all duration-300"
@@ -3409,9 +3422,9 @@ function Card05({
               <div
                 key={goal.title}
                 className="flex items-center gap-3 p-3 rounded-xl
-                                    bg-zinc-50 dark:bg-zinc-900/50 
+                                    bg-zinc-50 dark:bg-zinc-900/50
                                     border border-zinc-200/50 dark:border-zinc-800/50
-                                    hover:border-zinc-300/50 dark:hover:border-zinc-700/50 
+                                    hover:border-zinc-300/50 dark:hover:border-zinc-700/50
                                     transition-all"
               >
                 <CheckCircle2
@@ -3438,7 +3451,7 @@ function Card05({
           <Link
             to="#"
             className="inline-flex items-center gap-2 text-sm font-medium
-                                text-zinc-600 hover:text-zinc-900 
+                                text-zinc-600 hover:text-zinc-900
                                 dark:text-zinc-400 dark:hover:text-white
                                 transition-colors duration-200"
           >
@@ -3586,8 +3599,8 @@ function List03() {
       <div className="p-3 border-t border-zinc-200 dark:border-zinc-800">
         <button
           type="button"
-          className="flex items-center gap-2 w-full px-3 py-2 text-sm text-zinc-500 dark:text-zinc-400 
-                    hover:text-zinc-600 dark:hover:text-zinc-300 
+          className="flex items-center gap-2 w-full px-3 py-2 text-sm text-zinc-500 dark:text-zinc-400
+                    hover:text-zinc-600 dark:hover:text-zinc-300
                     hover:bg-zinc-50 dark:hover:bg-zinc-800/50
                     rounded-lg transition-colors"
         >
@@ -3961,30 +3974,13 @@ function useLocalStorageState(key, initialValue) {
   return [state, setState];
 }
 
-import { get_cache, set_cache } from "@/lib/cache-client";
-const cache_key = `todos-key`;
-
-function KanbanBoard() {
-  const { data: tasks, date, streak_data } = useLoaderData();
+function KanbanBoard({ tasks, date, streak_data, active_task }) {
+  const dispatch = useAppDispatch();
   const [columns, setColumns] = useState<Column[]>(defaultCols);
   const pickedUpTaskColumn = useRef<ColumnId | null>(null);
   const columnsId = useMemo(() => columns.map((col) => col.id), [columns]);
 
-  const saveTasksToLocalForage = async (tasks: Task[]) => {
-    try {
-      const cached_data = (await get_cache(cache_key)) as {} | null;
-      await set_cache(cache_key, {
-        ...cached_data,
-        [date.key]: [...tasks], // Menyimpan data berdasarkan tanggal
-      });
-    } catch (error) {
-      console.error("Error saving tasks to localforage", error);
-    }
-  };
-
-  // const [tasks, setTasks] = useLocalStorageState("tasks-kanban", initialTasks);
-
-  const [activeColumn, setActiveColumn] = useState<Column | null>(null);
+  // const [tasks, setTasks] = useState<Task[]>(_tasks);
 
   const [activeTask, setActiveTask] = useState<Task | null>(null);
 
@@ -4023,7 +4019,7 @@ function KanbanBoard() {
           pickedUpTaskColumn.current,
         );
         return `Picked up Task ${
-          active.data.current.task.title
+          active.data.current.task.content
         } at position: ${taskPosition + 1} of ${
           tasksInColumn.length
         } in column ${column?.title}`;
@@ -4050,7 +4046,7 @@ function KanbanBoard() {
         );
         if (over.data.current.task.columnId !== pickedUpTaskColumn.current) {
           return `Task ${
-            active.data.current.task.title
+            active.data.current.task.content
           } was moved over column ${column?.title} in position ${
             taskPosition + 1
           } of ${tasksInColumn.length}`;
@@ -4112,44 +4108,15 @@ function KanbanBoard() {
       onDragEnd={onDragEnd}
       onDragOver={onDragOver}
     >
-      <BoardContainer>
-        <SortableContext items={columnsId}>
-          {columns.map((col) => (
-            <BoardColumn
-              key={col.id}
-              column={col}
-              tasks={tasks.filter((task) => task.columnId === col.id)}
-            />
-          ))}
-        </SortableContext>
-      </BoardContainer>
-
-      {"document" in window &&
-        createPortal(
-          <DragOverlay>
-            {activeColumn && (
-              <BoardColumn
-                isOverlay
-                column={activeColumn}
-                tasks={tasks.filter(
-                  (task) => task.columnId === activeColumn.id,
-                )}
-              />
-            )}
-            {activeTask && <TaskCard task={activeTask} isOverlay />}
-          </DragOverlay>,
-          document.body,
-        )}
+      <SortableContext items={columnsId}>
+        <BoardColumn tasks={tasks} date={date} active_task={active_task} />
+      </SortableContext>
     </DndContext>
   );
 
   function onDragStart(event: DragStartEvent) {
     if (!hasDraggableData(event.active)) return;
     const data = event.active.data.current;
-    if (data?.type === "Column") {
-      setActiveColumn(data.column);
-      return;
-    }
 
     if (data?.type === "Task") {
       setActiveTask(data.task);
@@ -4158,7 +4125,6 @@ function KanbanBoard() {
   }
 
   function onDragEnd(event: DragEndEvent) {
-    setActiveColumn(null);
     setActiveTask(null);
 
     const { active, over } = event;
@@ -4169,12 +4135,7 @@ function KanbanBoard() {
 
     if (!hasDraggableData(active)) return;
 
-    const activeData = active.data.current;
-
     if (activeId === overId) return;
-
-    const isActiveAColumn = activeData?.type === "Column";
-    if (!isActiveAColumn) return;
 
     setColumns((columns) => {
       const activeColumnIndex = columns.findIndex((col) => col.id === activeId);
@@ -4185,7 +4146,7 @@ function KanbanBoard() {
     });
   }
 
-  async function onDragOver(event: DragOverEvent) {
+  function onDragOver(event: DragOverEvent) {
     const { active, over } = event;
     if (!over) return;
 
@@ -4206,32 +4167,16 @@ function KanbanBoard() {
 
     // Im dropping a Task over another Task
     if (isActiveATask && isOverATask) {
-      const activeIndex = tasks.findIndex((t) => t.id === activeId);
-      const overIndex = tasks.findIndex((t) => t.id === overId);
-      const activeTask = tasks[activeIndex];
-      const overTask = tasks[overIndex];
-      if (activeTask && overTask && activeTask.columnId !== overTask.columnId) {
-        activeTask.columnId = overTask.columnId;
-        return arrayMove(tasks, activeIndex, overIndex - 1);
+      function setter(tasks: Task[]) {
+        const activeIndex = tasks.findIndex((t) => t.id === activeId);
+        const overIndex = tasks.findIndex((t) => t.id === overId);
+
+        return arrayMove(tasks, activeIndex, overIndex);
       }
-
-      const updatedTasks = arrayMove(tasks, activeIndex, overIndex);
-      saveTasksToLocalForage(updatedTasks); // Simpan ke localforage setelah update
-    }
-
-    const isOverAColumn = overData?.type === "Column";
-
-    // Im dropping a Task over a column
-    if (isActiveATask && isOverAColumn) {
-      // setTasks((tasks) => {
-      //   const activeIndex = tasks.findIndex((t) => t.id === activeId);
-      //   const activeTask = tasks[activeIndex];
-      //   if (activeTask) {
-      //     activeTask.columnId = overId as ColumnId;
-      //     return arrayMove(tasks, activeIndex, activeIndex);
-      //   }
-      //   return tasks;
-      // });
+      const updatedTasks = setter(tasks);
+      dispatch(
+        updateTasksColumn({ key: date.timestamp, updated_task: updatedTasks }),
+      );
     }
   }
 }
@@ -4256,103 +4201,30 @@ interface BoardColumnProps {
   isOverlay?: boolean;
 }
 
-function BoardColumn({ column, tasks, isOverlay }: BoardColumnProps) {
+function BoardColumn({
+  column,
+  tasks,
+  date,
+  active_task,
+  isOverlay,
+}: BoardColumnProps) {
   const tasksIds = useMemo(() => {
     return tasks.map((task) => task.id);
   }, [tasks]);
 
-  const {
-    setNodeRef,
-    attributes,
-    listeners,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({
-    id: column.id,
-    data: {
-      type: "Column",
-      column,
-    } satisfies ColumnDragData,
-    attributes: {
-      roleDescription: `Column: ${column.title}`,
-    },
-  });
-
-  const style = {
-    transition,
-    transform: CSS.Translate.toString(transform),
-  };
-
-  const variants = cva(
-    "h-[90vh] max-h-[90vh] w-[30vw] max-w-full bg-primary-foreground flex flex-col flex-shrink-0 snap-center",
-    {
-      variants: {
-        dragging: {
-          default: "border-2 border-transparent",
-          over: "ring-2 opacity-30",
-          overlay: "ring-2 ring-primary",
-        },
-      },
-    },
-  );
-
   return (
-    <Card
-      ref={setNodeRef}
-      style={style}
-      className={variants({
-        dragging: isOverlay ? "overlay" : isDragging ? "over" : undefined,
-      })}
-    >
-      <CardHeader className="p-4 font-semibold border-b-2 text-left flex flex-row space-between items-center">
-        <Button
-          variant={"ghost"}
-          {...attributes}
-          {...listeners}
-          className=" p-1 text-primary/50 -ml-2 h-auto cursor-grab relative"
-        >
-          <span className="sr-only">{`Move column: ${column.title}`}</span>
-          <GripVertical />
-        </Button>
-        <span className="ml-auto"> {column.title}</span>
-      </CardHeader>
-      <ScrollArea>
-        <CardContent className="flex flex-grow flex-col gap-2 p-2">
-          <SortableContext items={tasksIds}>
-            {tasks.map((task) => (
-              <TaskCard key={task.id} task={task} />
-            ))}
-          </SortableContext>
-        </CardContent>
-      </ScrollArea>
-    </Card>
-  );
-}
-
-function BoardContainer({ children }: { children: React.ReactNode }) {
-  const dndContext = useDndContext();
-
-  const variations = cva("px-2 md:px-0 flex lg:justify-center pb-4", {
-    variants: {
-      dragging: {
-        default: "snap-x snap-mandatory",
-        active: "snap-none",
-      },
-    },
-  });
-
-  return (
-    <ScrollArea
-      className={variations({
-        dragging: dndContext.active ? "active" : "default",
-      })}
-    >
-      <div className="flex gap-4 items-center flex-row justify-center">
-        {children}
-      </div>
-      <ScrollBar orientation="horizontal" />
-    </ScrollArea>
+    <SortableContext items={tasksIds}>
+      {tasks.map((task, index) => (
+        <TaskCard
+          key={task.id}
+          index={index}
+          date={date}
+          active_task={active_task}
+          key={task.id}
+          task={task}
+        />
+      ))}
+    </SortableContext>
   );
 }
 
@@ -4374,35 +4246,13 @@ export interface TaskDragData {
   task: Task;
 }
 
-function TaskCard({ task, isOverlay }: TaskCardProps) {
-  const todo = task;
-  const index = 1;
-  const fetcher = useDebounceFetcher();
-
-  const fetcherPlay = useFetcher({ key: "play" + todo.id });
-  const submit = useSubmit();
-  const { data: todos, date, active_task } = useLoaderData();
-  const routeAction = `/daily?day=${date.timestamp}`;
-
-  const totalSessionTime = todo.sessions.reduce(
-    (total_time, session) => total_time + session.time,
-    0,
-  );
-  const today = new Date();
-  const yesterday = new Date(date.timestamp);
-  today.setHours(0, 1, 0, 0);
-  const todayTimestamp = today.getTime();
-  const isYesterday = todayTimestamp < date.timestamp;
-  const is_today = todayTimestamp === date.timestamp;
-
-  const transformedSubTasks =
-    task?.sub_tasks?.length > 0
-      ? task.sub_tasks.map((subTask) => ({
-          ...subTask,
-          checked: subTask.checked ? "on" : "off", // Transformasi boolean ke "on"/"off"
-        }))
-      : [];
-
+function TaskCard({
+  index,
+  date,
+  active_task,
+  task,
+  isOverlay,
+}: TaskCardProps) {
   const {
     setNodeRef,
     attributes,
@@ -4429,411 +4279,400 @@ function TaskCard({ task, isOverlay }: TaskCardProps) {
   const variants = cva("", {
     variants: {
       dragging: {
-        over: "ring-2 opacity-30",
-        overlay: "ring-2 ring-primary",
+        over: "",
+        overlay: "",
       },
     },
   });
+
+  const todo = task;
+
+  const totalSessionTime = todo.sessions.reduce(
+    (total_time, session) => total_time + session.time,
+    0,
+  );
+  const is_today = date.is_today;
+  const dispatch = useAppDispatch();
+
   return (
-    <Form
+    <div
       ref={setNodeRef}
       style={style}
-      className={variants({
-        dragging: isOverlay ? "overlay" : isDragging ? "over" : undefined,
-      })}
-      method="post"
+      className={cn(
+        "w-full mb-2",
+        variants({
+          dragging: isOverlay ? "overlay" : isDragging ? "over" : undefined,
+        }),
+      )}
     >
-      <div
-        className={cn(
-          "relative  inset-0 w-full transition-all ease-in-out duration-500",
-        )}
-      >
-        <Collapsible defaultOpen={true}>
-          <div
-            className={cn(
-              "relative flex items-start overflow-hidden dark:bg-gradient-to-l dark:from-gray-950/80 dark:to-gray-800 py-2 mb-3 bg-gray-50 rounded-lg shadow-md",
-              active_task && todo.status !== "progress"
-                ? "bg-white/40 text-muted-foreground opacity-80"
-                : active_task && todo.status === "progress"
-                  ? "bg-orange-100 dark:bg-orange-400 bg-gradient-to-l from-gray-50 dark:from-orange-950 opacity-100"
-                  : todo.status === "done"
-                    ? "bg-green-100 dark:bg-green-900 bg-gradient-to-l via-white dark:via-black from-green-50 dark:from-green-950 opacity-100"
-                    : "",
-            )}
-          >
-            <div
-              className="-mt-0 h-full cursor-pointer px-1 py-1 text-gray-300 hover:text-gray-800 dark:text-gray-600 dark:hover:text-gray-400"
-              style={{ touchAction: "none" }}
-              draggable="true"
+      <Collapsible defaultOpen={false}>
+        <div
+          className={cn(
+            "p-2 relative flex items-start overflow-hidden dark:bg-gradient-to-l dark:from-gray-950/80 dark:to-gray-800 py-2 mb-2 bg-gray-50 rounded-lg shadow-md",
+            active_task && todo.status !== "progress"
+              ? "bg-white/40 text-muted-foreground opacity-80"
+              : active_task && todo.status === "progress"
+                ? "bg-orange-100 dark:bg-orange-400 bg-gradient-to-l from-gray-50 dark:from-orange-950 opacity-100"
+                : todo.status === "done"
+                  ? "bg-green-100 dark:bg-green-900 bg-gradient-to-l via-white dark:via-black from-green-50 dark:from-green-950 opacity-100"
+                  : "",
+          )}
+        >
+          <div className="-mt-0 h-full cursor-pointer px-1 py-1 text-gray-300 hover:text-gray-800 dark:text-gray-600 dark:hover:text-gray-400">
+            <Button
+              variant={"link"}
+              {...attributes}
+              {...listeners}
+              className="text-secondary-foreground/50  h-auto cursor-grab absolute top-1/2 transform -translate-y-1/2 left-2  z-20 h-5 w-5 mt-1"
             >
-              <Button
-                variant={"ghost"}
-                {...attributes}
-                {...listeners}
-                className="p-1 text-secondary-foreground/50 -ml-2 h-auto cursor-grab"
-              >
-                <span className="sr-only">Move task</span>
-                <GripVertical />
-              </Button>
-            </div>
-            <div className="mr-1">
-              {todo.status === "done" && (
-                <CircleCheckBig className="absolute top-0 -right-4 w-28 h-28 text-green-500 dark:text-green-400 opacity-30" />
-              )}
-              <div className="flex gap-2 pl-0 pt-1">
-                {is_today ? (
-                  <React.Fragment>
-                    {todo.status === "done" ? (
-                      <CircleCheckBig className="w-6 h-6 text-green-500 rounded-full" />
-                    ) : todo.start_at ? (
-                      <button
-                        onClick={() =>
-                          fetcherPlay.submit(
-                            {
-                              intent: "update-status-task",
-                              id: todo.id,
-                              status: "pause",
-                            },
-                            { action: routeAction, method: "POST" },
-                          )
-                        }
-                        className={cn(
-                          "flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-yellow-500  text-white",
-                          active_task &&
-                            "animate-roll-reveal [animation-fill-mode:backwards]",
-                        )}
-                      >
-                        <Pause className="h-5 w-5" />
-                      </button>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={() =>
-                          fetcherPlay.submit(
-                            {
-                              intent: "update-status-task",
-                              id: todo.id,
-                              status: "progress",
-                            },
-                            { action: routeAction, method: "POST" },
-                          )
-                        }
-                        className={cn(
-                          "flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-blue-500 pl-0.5 text-white",
-                          active_task &&
-                            "animate-roll-reveal [animation-fill-mode:backwards]",
-                        )}
-                      >
-                        <Play className="h-5 w-5" />
-                      </button>
-                    )}
-                  </React.Fragment>
-                ) : (
-                  <button className="h-6 w-6 shrink-0 items-center justify-center rounded-full hover:bg-gray-200 dark:hover:bg-gray-500 ">
-                    <ArrowRight />
-                  </button>
-                )}
-              </div>
-            </div>
-            <div className="w-full group">
-              <div className="relative flex w-full items-center">
-                <AutosizeTextarea
-                  key={`title-${todo.id}`}
-                  name="title"
-                  defaultValue={todo.title}
-                  onChange={(event) => {
-                    fetcher.submit(event.target.form, {
-                      navigate: false, // use a fetcher instead of a page navigation
-                      fetcherKey: task.id, // cancel any previous fetcher with the same key
-                      debounceTimeout: 1000,
-                    });
-                  }}
-                  style={{ resize: "none" }}
-                  className="w-full bg-transparent p-1 outline-none text-md border-none focus-visible:ring-offset-0 focus-visible:ring-0 outline-none"
-                  maxHeight={800}
-                  placeholder="Untitled"
-                  autoComplete="off"
-                />
-                <div className="ml-auto flex items-center gap-1 mr-2">
-                  <CollapsibleTrigger data-state="open">
-                    <ChevronsUpDown className="w-5 h-5  data-[state=open]:hidden block" />
-                    <X className="w-5 h-5 data-[state=open]:block hidden" />
-                    <span className="sr-only">Toggle</span>
-                  </CollapsibleTrigger>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button size="icon" variant="link">
-                        <EllipsisVertical className="w-5 h-5 " />
-                      </Button>
-                    </DropdownMenuTrigger>
+              <span className="sr-only">Move task</span>
+              <GripVertical className="" />
+            </Button>
+          </div>
+          <div className="mr-1">
+            {todo.status === "done" && (
+              <CircleCheckBig className="absolute top-0 -right-4 w-28 h-28 text-green-500 dark:text-green-400 opacity-30" />
+            )}
+            <div className="flex gap-2 pl-0 pt-1">
+              {is_today ? (
+                <React.Fragment>
+                  {todo.status === "done" ? (
+                    <CircleCheckBig className="w-6 h-6 text-green-500 rounded-full" />
+                  ) : todo.start_at ? (
+                    <button
+                      onClick={() => {
+                        const elapsedTime = todo.start_at
+                          ? Date.now() - new Date(todo.start_at).getTime()
+                          : 0;
+                        const newTotalTime = todo.total_time + elapsedTime;
 
-                    <DropdownMenuContent>
-                      <DropdownMenuItem
-                        onClick={() =>
-                          submit(
-                            {
-                              intent: "add-sub-task",
-                              id: todo.id,
-                              sub_tasks: JSON.stringify({
-                                id: Date.now().toString(), // Default ID unik
-                                title: "",
-                                checked: "off",
-                                category: "",
-                              }),
+                        dispatch(
+                          updateTask({
+                            id: todo.id,
+                            key: date.timestamp,
+                            updated_task: {
+                              status: "paused",
+                              start_at: null,
+                              total_time: newTotalTime,
                             },
-                            { action: routeAction, method: "POST" },
-                          )
-                        }
+                          }),
+                        );
+                      }}
+                      className={cn(
+                        "flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-yellow-500  text-white",
+                        active_task &&
+                          "animate-roll-reveal [animation-fill-mode:backwards]",
+                      )}
+                    >
+                      <Pause className="h-5 w-5" />
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        dispatch(
+                          updateTask({
+                            id: todo.id,
+                            key: date.timestamp,
+                            updated_task: {
+                              title: todo.title,
+                              status: "progress",
+                              start_at: new Date().toISOString(),
+                            },
+                          }),
+                        )
+                      }
+                      className={cn(
+                        "flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-blue-500 pl-0.5 text-white",
+                        active_task &&
+                          "animate-roll-reveal [animation-fill-mode:backwards]",
+                      )}
+                    >
+                      <Play className="h-5 w-5" />
+                    </button>
+                  )}
+                </React.Fragment>
+              ) : (
+                <button className="h-6 w-6 shrink-0 items-center justify-center rounded-full hover:bg-gray-200 dark:hover:bg-gray-500 ">
+                  <ArrowRight />
+                </button>
+              )}
+            </div>
+          </div>
+          <div className="w-full group">
+            <div className="relative flex w-full items-start">
+              <AutosizeTextarea
+                key={`title-${todo.id}`}
+                name="title"
+                defaultValue={todo.title}
+                onBlur={(e) => {
+                  dispatch(
+                    updateTask({
+                      id: task.id,
+                      key: date.timestamp,
+                      updated_task: {
+                        title: e.target.value,
+                      },
+                    }),
+                  );
+                }}
+                style={{ resize: "none" }}
+                className="w-full bg-transparent p-1 outline-none text-md border-none focus-visible:ring-offset-0 focus-visible:ring-0 outline-none"
+                minHeight={20}
+                maxHeight={800}
+                placeholder="Untitled"
+                autoComplete="off"
+              />
+              <div className="ml-auto flex items-center gap-2 pr-2 pt-2">
+                <CollapsibleTrigger>
+                  <Badge
+                    className="flex items-center gap-x-1"
+                    variant="success"
+                  >
+                    <ChevronsUpDown className="w-4 h-4" />
+                    <span>{todo.sub_tasks.length}</span>
+                  </Badge>
+                  <span className="sr-only">Toggle</span>
+                </CollapsibleTrigger>
+                <DropdownMenu>
+                  <DropdownMenuTrigger>
+                    <EllipsisVertical className="w-4 h-4" />
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-[200px]">
+                    <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                    <DropdownMenuGroup>
+                      <DropdownMenuItem
+                        onClick={() => dispatch(addSubTask({ id: todo.id }))}
                       >
                         <Plus /> Add Subtask
                       </DropdownMenuItem>
                       {todo.status !== "done" && (
                         <DropdownMenuItem
-                          className="text-green-500"
+                          className="text-green-600"
                           onClick={() =>
-                            submit(
-                              {
-                                intent: "update-status-task",
-                                id: todo.id,
-                                status: "done",
-                              },
-                              { action: routeAction, method: "POST" },
+                            dispatch(
+                              updateTask({
+                                id: task.id,
+                                key: date.timestamp,
+                                updated_task: {
+                                  title: todo.title,
+                                  status: "done",
+                                },
+                              }),
                             )
                           }
                         >
-                          <CircleCheckBig />
+                          <CircleCheckBig className="w-5 h-5" />
                           Mark as done
                         </DropdownMenuItem>
                       )}
+                      <DropdownMenuSeparator />
 
                       <AlertDialogProvider>
-                        <DeleteTask id={todo.id} />
+                        <DeleteTask
+                          task_id={todo.id}
+                          task_title={todo.title}
+                          timestamp={date.timestamp}
+                        />
                       </AlertDialogProvider>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
+                    </DropdownMenuGroup>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
-              <div>
-                <div className="relative ml-1 block py-0.5">
-                  <div className="flex items-end">
-                    <div>
-                      <div className="overflow-hidden items-center justify-start gap-1 h-3">
-                        {new Array(16).fill(null).map((_, index) => (
-                          <button
-                            onClick={() => {
-                              submit(
-                                {
-                                  intent: "update-target-task-session",
-                                  id: todo.id,
-                                  target_sessions: index + 1,
-                                },
-                                { action: routeAction, method: "POST" },
-                              );
-                            }}
-                            key={index} // Gunakan key untuk identifikasi unik
-                            type="button"
-                            style={{ animationDelay: `${index * 0.03}s` }}
-                            className={cn(
-                              "h-3 w-3 shrink-0 cursor-pointer rounded-full ",
-                              todo?.sessions?.length >= index + 1
-                                ? "bg-green-400"
-                                : todo?.target_sessions >= index + 1
-                                  ? "bg-gray-500"
-                                  : "bg-gray-300 transition-all duration-300 animate-roll-reveal [animation-fill-mode:backwards] ",
-                            )}
-                          />
-                        ))}
-                        <button
-                          style={{ animationDelay: `${16 * 0.03}s` }}
-                          onClick={() => {
-                            submit(
-                              {
-                                intent: "update-target-task-session",
-                                id: todo.id,
-                                target_sessions: 0,
+            </div>
+            <div>
+              <div className="relative ml-1 block py-0.5 ">
+                <div className="flex items-end">
+                  <div className="flex items-center justify-start gap-1 h-4">
+                    {new Array(16).fill(null).map((_, index) => (
+                      <button
+                        onClick={() => {
+                          dispatch(
+                            updateTask({
+                              id: task.id,
+                              key: date.timestamp,
+                              updated_task: {
+                                title: todo.title,
+                                target_sessions: index + 1,
                               },
-                              { action: routeAction, method: "POST" },
-                            );
-                          }}
-                          className="h-3 w-3 shrink-0 cursor-pointer rounded-full bg-red-400 text-white flex items-center justify-center hidden group-hover:flex  animate-roll-reveal [animation-fill-mode:backwards] "
-                        >
-                          <X />
-                        </button>
-                      </div>
-                      <div className="absolute left-0 top-0 flex items-center gap-1 py-0.5" />
-                      <div className="mt-2 inline-block rounded p-1 text-sm text-black dark:text-white">
-                        <div className={todo?.start_at ? "todo-progress" : ""}>
-                          {new Date(totalSessionTime)
-                            .toISOString()
-                            .substr(11, 8)}
-                        </div>
-                      </div>
-                    </div>
-                    <div className="ml-auto px-2 pb-0.5">
-                      <div className="flex items-center gap-x-1.5 ml-auto px-2">
-                        <input
-                          key={`category-${todo.id}`}
-                          id={`category-${todo.id}`}
-                          className="font-bold w-fit bg-transparent p-1 outline-none text-xs text-right"
-                          onChange={(event) => {
-                            fetcher.submit(event.target.form, {
-                              navigate: false,
-                              fetcherKey: task.id,
-                              debounceTimeout: 1000,
-                            });
-                          }}
-                        />
-                        <label
-                          htmlFor={`category-${todo.id}`}
-                          className="h-4 w-4 rounded bg-gray-200"
-                        />
-                      </div>
-                    </div>
+                            }),
+                          );
+                        }}
+                        key={index} // Gunakan key untuk identifikasi unik
+                        type="button"
+                        style={{ animationDelay: `${index * 0.03}s` }}
+                        className={cn(
+                          "h-[12px] w-[12px] shrink-0 cursor-pointer rounded-full ",
+                          todo?.sessions?.length >= index + 1
+                            ? "bg-green-400"
+                            : todo?.target_sessions >= index + 1
+                              ? "bg-gray-500"
+                              : "bg-gray-300  hidden group-hover:block transition-all duration-300 animate-roll-reveal [animation-fill-mode:backwards] ",
+                        )}
+                      />
+                    ))}
+                    <button
+                      style={{ animationDelay: `${16 * 0.03}s` }}
+                      onClick={() => {
+                        dispatch(
+                          updateTask({
+                            id: task.id,
+                            key: date.timestamp,
+                            updated_task: {
+                              title: todo.title,
+                              target_sessions: 0,
+                            },
+                          }),
+                        );
+                      }}
+                      className="h-3 w-3 shrink-0 cursor-pointer rounded-full bg-red-400 text-white flex items-center justify-center hidden group-hover:flex  animate-roll-reveal [animation-fill-mode:backwards] "
+                    >
+                      <X />
+                    </button>
                   </div>
-                  <div className="flex">
-                    <div className="hidden">
-                      <button className="flex items-center gap-1 rounded bg-gray-100 px-1.5 py-0.5 text-xs hover:bg-gray-200 dark:bg-gray-600 dark:hover:bg-gray-500 ">
-                        Move to today <ArrowRight className="w-4 h-4" />
-                      </button>
-                    </div>
+                </div>
+
+                <div className="flex items-center justify-between gap-x-1.5 pr-2 text-sm mt-1">
+                  <div className={todo?.start_at ? "todo-progress" : ""}>
+                    {new Date(totalSessionTime).toISOString().substr(11, 8)}
+                  </div>
+                  <SelectDemo task={task} date={date} />
+                </div>
+                <div className="flex">
+                  <div className="hidden">
+                    <button className="flex items-center gap-1 rounded bg-gray-100 px-1.5 py-0.5 text-xs hover:bg-gray-200 dark:bg-gray-600 dark:hover:bg-gray-500 ">
+                      Move to today <ArrowRight className="w-4 h-4" />
+                    </button>
                   </div>
                 </div>
               </div>
             </div>
           </div>
-          <CollapsibleContent className="CollapsibleContent space-y-2 text-text font-base">
-            {transformedSubTasks?.map((subtask, index) => {
-              return (
+        </div>
+        <CollapsibleContent className="CollapsibleContent space-y-2 text-text font-base mt-1">
+          {task.sub_tasks?.map((subtask, index) => {
+            return (
+              <div
+                key={index}
+                className={cn(
+                  "ml-5 relative flex items-start overflow-hidden dark:bg-gradient-to-l dark:from-gray-950/80 dark:to-gray-800 bg-gray-50 rounded-lg py-2 mb-1.5 shadow-md",
+                  active_task && todo.status !== "progress"
+                    ? "bg-white/40 text-muted-foreground opacity-80"
+                    : subtask.checked
+                      ? "bg-green-100 dark:bg-green-900 bg-gradient-to-l via-white dark:via-black from-green-50 dark:from-green-950 opacity-100"
+                      : "opacity-100",
+                )}
+              >
+                {subtask.checked && (
+                  <CircleCheckBig className="absolute top-0 -right-4 w-28 h-28 text-green-500 dark:text-green-400 opacity-30" />
+                )}
                 <div
-                  key={index}
-                  className={cn(
-                    "ml-5 relative flex items-start overflow-hidden dark:bg-gradient-to-l dark:from-gray-950/80 dark:to-gray-800 bg-gray-50 rounded-lg py-2 mb-2 shadow-md",
-                    active_task && todo.status !== "progress"
-                      ? "bg-white/40 text-muted-foreground opacity-80"
-                      : subtask.checked === "on"
-                        ? "bg-green-100 dark:bg-green-900 bg-gradient-to-l via-white dark:via-black from-green-50 dark:from-green-950 opacity-100"
-                        : "opacity-100",
-                  )}
+                  className="-mt-0 h-full cursor-pointer px-1 py-1 text-gray-300 hover:text-gray-800 dark:text-gray-600 dark:hover:text-gray-400"
+                  style={{ touchAction: "none" }}
+                  draggable="true"
                 >
-                  {subtask.checked === "on" && (
-                    <CircleCheckBig className="absolute top-0 -right-4 w-28 h-28 text-green-500 dark:text-green-400 opacity-30" />
-                  )}
-                  <div
-                    className="-mt-0 h-full cursor-pointer px-1 py-1 text-gray-300 hover:text-gray-800 dark:text-gray-600 dark:hover:text-gray-400"
-                    style={{ touchAction: "none" }}
-                    draggable="true"
-                  >
-                    <GripVertical className="h-5 w-5" />
+                  <GripVertical className="absolute top-1/2 transform -translate-y-1/2 left-2  z-20 h-5 w-5 mt-1" />
+                </div>
+                <div className="ml-1">
+                  <div className="flex gap-2 pl-0 pt-1 mr-2 mt-1">
+                    <input
+                      type="hidden"
+                      defaultValue={subtask.id}
+                      key={`sub_tasks[${index}].id`}
+                      name={`sub_tasks[${index}].id`}
+                      id={`sub_tasks[${index}].id`}
+                    />
+                    <input
+                      type="checkbox"
+                      defaultChecked={subtask.checked}
+                      onChange={(e) => {
+                        dispatch(
+                          updateSubTask({
+                            id: task.id,
+                            key: date.timestamp,
+                            sub_task_id: subtask.id,
+                            updated_sub_task: {
+                              title: subtask.title,
+                              checked: e.target.checked,
+                            },
+                          }),
+                        );
+                      }}
+                      className="accent-green-400 scale-150"
+                      key={`sub_tasks[${index}].checked`}
+                      name={`sub_tasks[${index}].checked`}
+                      id={`sub_tasks[${index}].checked`}
+                    />
                   </div>
-                  <div className="">
-                    <div className="flex gap-2 pl-0 pt-1 mr-2 mt-1">
-                      <input
-                        type="hidden"
-                        defaultValue={subtask.id}
-                        key={`sub_tasks[${index}].id`}
-                        name={`sub_tasks[${index}].id`}
-                        id={`sub_tasks[${index}].id`}
-                      />
-                      <input
-                        type="checkbox"
-                        defaultChecked={subtask.checked === "on"}
-                        onChange={(event) => {
-                          fetcher.submit(event.target.form, {
-                            navigate: false,
-                            fetcherKey: task.id,
-                            debounceTimeout: 0,
-                          });
-                        }}
-                        className="accent-green-400 scale-150"
-                        key={`sub_tasks[${index}].checked`}
-                        name={`sub_tasks[${index}].checked`}
-                        id={`sub_tasks[${index}].checked`}
-                      />
-                    </div>
-                  </div>
-                  <div className="w-full">
-                    <div className="relative flex w-full items-center">
-                      <AutosizeTextarea
-                        defaultValue={subtask.title}
-                        key={`sub_tasks[${index}].title`} // Dinamis berdasarkan index
-                        name={`sub_tasks[${index}].title`} // Dinamis berdasarkan index
-                        id={`sub_tasks[${index}].title`} // Dinamis ber
-                        onChange={(event) => {
-                          fetcher.submit(event.target.form, {
-                            navigate: false,
-                            fetcherKey: task.id,
-                            debounceTimeout: 1000,
-                          });
-                        }}
-                        style={{ resize: "none" }}
-                        className="w-full bg-transparent p-1 outline-none text-md border-none focus-visible:ring-offset-0 focus-visible:ring-0 outline-none"
-                        maxHeight={800}
-                        placeholder="Untitled"
-                        autoComplete="off"
-                      />
-                      <div className="ml-auto flex items-center">
-                        <div className="">
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button size="sm" variant="link">
-                                <EllipsisVertical className="w-5 h-5 " />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <AlertDialogProvider>
-                                <DeleteTask id={subtask.id} />
-                              </AlertDialogProvider>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </div>
+                </div>
+                <div className="w-full">
+                  <div className="relative flex w-full items-start">
+                    <AutosizeTextarea
+                      defaultValue={subtask.title}
+                      key={`sub_tasks[${index}].title`} // Dinamis berdasarkan index
+                      name={`sub_tasks[${index}].title`} // Dinamis berdasarkan index
+                      id={`sub_tasks[${index}].title`} // Dinamis ber
+                      onBlur={(e) => {
+                        dispatch(
+                          updateSubTask({
+                            id: task.id,
+                            key: date.timestamp,
+                            sub_task_id: subtask.id,
+                            updated_sub_task: {
+                              title: e.target.value,
+                            },
+                          }),
+                        );
+                      }}
+                      style={{ resize: "none" }}
+                      className="w-full bg-transparent p-1 outline-none text-md border-none focus-visible:ring-offset-0 focus-visible:ring-0 outline-none"
+                      maxHeight={800}
+                      placeholder="Untitled"
+                      autoComplete="off"
+                    />
+                    <div className="ml-auto flex items-center gap-2 pr-2 pt-2">
+                      <div className="">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger>
+                            <EllipsisVertical className="w-4 h-4 " />
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <AlertDialogProvider>
+                              <DeleteTask
+                                task_id={task.id}
+                                sub_task_id={subtask.id}
+                                task_title={todo.title}
+                                sub_task_title={subtask.title}
+                                timestamp={date.timestamp}
+                              />
+                            </AlertDialogProvider>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </div>
                     </div>
-                    <div>
-                      <div className="relative ml-1 block py-0.5 md:block">
-                        <div className="flex items-end">
-                          <div className="flex items-center gap-x-1.5 ml-auto px-2">
-                            <input
-                              className="fontsubtask-bold w-fit bg-transparent p-1 outline-none text-xs text-right"
-                              defaultValue={subtask.category}
-                              onChange={(event) => {
-                                fetcher.submit(event.target.form, {
-                                  navigate: false,
-                                  fetcherKey: task.id,
-                                  debounceTimeout: 1000,
-                                });
-                              }}
-                              key={`sub_tasks[${index}].category`}
-                              name={`sub_tasks[${index}].category`}
-                              id={`sub_tasks[${index}].category`}
-                            />
-                            <label
-                              htmlFor={`sub_tasks[${index}].category`}
-                              className="h-4 w-4 rounded bg-gray-200"
-                            />
-                          </div>
+                  </div>
+                  <div>
+                    <div className="relative ml-1 block py-0.5 md:block">
+                      <div className="flex items-end">
+                        <div className="flex items-center gap-x-1.5 ml-auto">
+                          <SelectDemo
+                            task={task}
+                            subtask={subtask}
+                            date={date}
+                          />
                         </div>
                       </div>
                     </div>
                   </div>
                 </div>
-              );
-            })}
-          </CollapsibleContent>
-        </Collapsible>
+              </div>
+            );
+          })}
+        </CollapsibleContent>
+      </Collapsible>
 
-        {/*<pre className="text-xs">{JSON.stringify(todo, null, 2)}</pre>*/}
-      </div>
-
-      <HiddenFields
-        data={{
-          id: todo.id,
-          status: todo.status,
-          target_sessions: todo.target_sessions,
-          intent: "update-task",
-          completed_sessions: todo.completed_sessions,
-        }}
-      />
-    </Form>
+      {/*<pre className="text-xs">{JSON.stringify(todo, null, 2)}</pre>*/}
+    </div>
   );
 }
 
