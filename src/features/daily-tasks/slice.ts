@@ -33,7 +33,7 @@ const todoReducer = (
         id: Date.now(),
         status: "draft",
         title: "",
-        category: { label: "", color: "gray" },
+        category: { label: "General", color: "#9ca3af" },
         start_at: null,
         total_time: 0,
         target_sessions: 0,
@@ -186,8 +186,60 @@ const todoReducer = (
 
       return state;
     }
+    case "UPDATE_SESSON_TASK": {
+      const { id, updated_session_task } = action.payload;
+      const date_key = get_formatted_date(action.payload?.key);
+      const formatted_date = date_key.key;
+
+      if (state.tasks[formatted_date]) {
+        const taskIndex = state.tasks[formatted_date].findIndex(
+          (task) => task.id === id,
+        );
+
+        if (taskIndex !== -1) {
+          const task = state.tasks[formatted_date][taskIndex];
+
+          const updatedSubTasks = [
+            ...task.sessions, // Spread the old sessions to create a new array
+            ...updated_session_task.filter(
+              (newSession) =>
+                !task.sessions.some(
+                  (existingSession) =>
+                    existingSession.date === newSession.date &&
+                    existingSession.time === newSession.time,
+                ),
+            ), // Only add new sessions that are not already in the task.sessions
+          ];
+
+          const updatedTask = {
+            ...task, // Spread the task object to create a new object
+            sessions: updatedSubTasks, // Set the new sessions array
+            status: "draft" as "draft",
+            total_time: 0,
+            start_at: null,
+            updated_at: new Date().toISOString(),
+          };
+
+          // Ensure we create a new tasks array, modifying only the task that was updated
+          return {
+            ...state,
+            tasks: {
+              ...state.tasks,
+              [formatted_date]: [
+                ...state.tasks[formatted_date].slice(0, taskIndex), // Keep the tasks before the updated task
+                updatedTask, // Place the updated task at the correct index
+                ...state.tasks[formatted_date].slice(taskIndex + 1), // Keep the tasks after the updated task
+              ],
+            },
+          };
+        }
+      }
+
+      return state;
+    }
     case "UPDATE_TASK": {
       const date_key = get_formatted_date(action.payload?.key);
+      console.warn("DEBUGPRINT[3]: slice.ts:190: action=", action);
       const formatted_date = date_key.key;
 
       // Ambil data task yang sudah ada untuk tanggal yang ditentukan
@@ -203,10 +255,12 @@ const todoReducer = (
         // Ambil task yang asli
         const taskToUpdate = existing_data[taskIndex];
 
+        const new_session = action.payload.updated_task?.sessions || [];
         // Gabungkan data baru dengan task yang lama, pastikan tidak mengubah data yang tidak ada di payload
         const updatedTask = {
           ...taskToUpdate,
           ...action.payload.updated_task, // Data yang ingin diupdate dari payload
+          sessions: [...taskToUpdate.sessions, ...new_session],
           updated_at: new Date().toISOString(),
         };
 

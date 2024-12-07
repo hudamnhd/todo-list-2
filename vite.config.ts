@@ -19,6 +19,8 @@ export default defineConfig({
       // switch to "true" to enable sw on development
       devOptions: {
         enabled: false,
+        type: "module",
+        navigateFallback: "index.html",
       },
     }),
   ],

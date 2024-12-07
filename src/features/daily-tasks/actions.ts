@@ -56,7 +56,13 @@ export interface AddSubTaskAction {
 
 export interface DeleteSubTaskAction {
   type: "DELETE_SUB_TASK";
-  payload: { sub_task_id: number; id: number; key?: number };
+  payload: {
+    sub_task_id: number;
+    title: string;
+    sub_task_title: string;
+    id: number;
+    key?: number;
+  };
 }
 
 export interface UpdateSubTaskAction {
@@ -66,6 +72,18 @@ export interface UpdateSubTaskAction {
     id: number;
     key?: number;
     updated_sub_task: any;
+  };
+}
+
+export interface UpdateSessionTaskAction {
+  type: "UPDATE_SESSON_TASK";
+  payload: {
+    id: number;
+    key?: number;
+    updated_session_task: {
+      date: string;
+      time: number;
+    }[];
   };
 }
 
@@ -80,7 +98,7 @@ export interface UpdateTaskAction {
 
 export interface DeleteTaskAction {
   type: "DELETE_TASK";
-  payload: { id: number; key?: number };
+  payload: { id: number; title: string; key?: number };
 }
 
 export interface SetTasksAction {
@@ -93,6 +111,7 @@ export type TaskActionTypes =
   | AddSubTaskAction
   | DeleteSubTaskAction
   | UpdateSubTaskAction
+  | UpdateSessionTaskAction
   | UpdateTaskAction
   | SetTasksAction
   | DeleteTaskAction;
@@ -131,14 +150,40 @@ export const updateSubTask = ({
   };
 };
 
-export const deleteSubTask = ({
-  sub_task_id,
+export const updateSessionTask = ({
   id,
   key,
-}: { sub_task_id: number; id: number; key?: number }): DeleteSubTaskAction => {
+  updated_session_task,
+}: {
+  id: number;
+  key?: number;
+  updated_session_task: {
+    date: string;
+    time: number;
+  }[];
+}): UpdateSessionTaskAction => {
+  return {
+    type: "UPDATE_SESSON_TASK",
+    payload: { id, key, updated_session_task },
+  };
+};
+
+export const deleteSubTask = ({
+  sub_task_id,
+  sub_task_title,
+  id,
+  title,
+  key,
+}: {
+  sub_task_id: number;
+  id: number;
+  title: string;
+  sub_task_title: string;
+  key?: number;
+}): DeleteSubTaskAction => {
   return {
     type: "DELETE_SUB_TASK",
-    payload: { sub_task_id, id, key },
+    payload: { sub_task_title, sub_task_id, title, id, key },
   };
 };
 
@@ -159,11 +204,12 @@ export const updateTask = ({
 
 export const deleteTask = ({
   id,
+  title,
   key,
-}: { id: number; key?: number }): DeleteTaskAction => {
+}: { id: number; title: string; key?: number }): DeleteTaskAction => {
   return {
     type: "DELETE_TASK",
-    payload: { id, key },
+    payload: { title, id, key },
   };
 };
 
