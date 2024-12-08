@@ -3,6 +3,7 @@ import { createRoot } from "react-dom/client";
 import { Outlet, createBrowserRouter, RouterProvider } from "react-router-dom";
 import DailyTasks from "./routes/daily/index.tsx";
 import DailyTasksGarden from "./routes/daily/daily-garden.tsx";
+import DailyTasksSprint from "./routes/daily/daily-sprint.tsx";
 import ErrorPage from "./error-page";
 import NotFoundError from "./404.tsx";
 import "./index.css";
@@ -28,6 +29,10 @@ const router = createBrowserRouter([
           {
             path: "/daily/garden",
             element: <DailyTasksGarden />,
+          },
+          {
+            path: "/daily/sprint",
+            element: <DailyTasksSprint />,
           },
         ],
       },

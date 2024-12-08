@@ -144,13 +144,7 @@ async function load_data_daily_tasks() {
     spinner.style.display = "flex";
   }
 
-  const load_local_storage = localStorage.getItem("daily-tasks");
-  const local_data = load_local_storage ? JSON.parse(load_local_storage) : {};
-  await save_data_daily_tasks(local_data);
-  const initialTasks = local_data;
-  // const initialTasks = await get_cache("daily-tasks");
-
-  // const cache_log = await get_cache("log-daily-tasks");
+  const initialTasks = await get_cache("daily-tasks");
 
   // const testData = generate_todos_by_date("2024-11-22", 30); // Data untuk 7 hari mulai dari 1 Desember 2024
   // store.dispatch(setTasks(testData));
@@ -164,17 +158,17 @@ async function load_data_daily_tasks() {
   try {
     if (initialTasks) {
       store.dispatch(setTasks(initialTasks));
-      localStorage.removeItem("daily-tasks");
     } else {
       store.dispatch(setTasks({}));
     }
+    initial_data = false;
   } catch (error) {
     console.warn("DEBUGPRINT[2]: todo.tsx:81: error=", error);
+    initial_data = false;
   } finally {
     if (spinner) {
       spinner.style.display = "none";
     }
-    initial_data = false;
   }
 }
 
@@ -273,12 +267,19 @@ const TodoNavigator = ({ data }) => {
   const active_task = findTodosByStatusWithReduce(data, "progress");
   const all_session = calculateGlobalSessionCount(data);
   const streak_data = calculateStreak(data);
+  // This could be useState, useOptimistic, or other state
 
-  useBeforeUnload(
-    React.useCallback(() => {
-      localStorage.setItem("daily-tasks", JSON.stringify(data));
-    }, [data]),
-  );
+  // useBeforeUnload(
+  //   React.useCallback(() => {
+  //     if (
+  //       data &&
+  //       Object.keys(data).length > 0 &&
+  //       Object.values(data).some((val) => val !== null && val !== undefined)
+  //     ) {
+  //       localStorage.setItem("daily-tasks", JSON.stringify(data));
+  //     }
+  //   }, [data]),
+  // );
 
   return (
     <div>
@@ -304,6 +305,7 @@ const TodoNavigator = ({ data }) => {
           <AddTodo date={date_key} />
         )}
         {/*<Debug data={todos} />*/}
+        <Unload data={data} date={date_key} active_task={active_task} />
       </div>
     </div>
   );
@@ -326,6 +328,21 @@ const TaskFirst = () => {
       </div>
     );
   }
+};
+
+const Unload = ({ data }) => {
+  function beforeUnload(e: BeforeUnloadEvent) {
+    e.preventDefault();
+    save_data_daily_tasks(data);
+    event.returnValue = true;
+  }
+  React.useEffect(() => {
+    window.addEventListener("beforeunload", beforeUnload);
+
+    return () => {
+      window.removeEventListener("beforeunload", beforeUnload);
+    };
+  }, [data]);
 };
 
 export default TaskFirst;
@@ -678,10 +695,9 @@ const AddTodo = ({ date }) => {
 };
 
 const TWENTY_FIVE_MINUTES = 25 * 60 * 1000; // 25 menit dalam milidetik
+// const TWENTY_FIVE_MINUTES = 1 * 60 * 1000; // 25 menit dalam milidetik
 const radius = 40; // Radius lingkaran
 const circumference = 2 * Math.PI * radius; // Keliling lingkaran
-
-import { useBeforeUnload } from "react-router-dom";
 
 function askNotificationPermission() {
   if (!("Notification" in window)) {
@@ -721,27 +737,6 @@ const TodoTimer = ({
 
   const pauseTodo = todos.find((todo) => todo.status === "paused");
 
-  useBeforeUnload(
-    React.useCallback(() => {
-      const elapsedTime = active_task.start_at
-        ? Date.now() - new Date(active_task.start_at).getTime()
-        : 0;
-      const newTotalTime = active_task.total_time + elapsedTime;
-
-      dispatch(
-        updateTask({
-          id: active_task.id,
-          key: date.timestamp,
-          updated_task: {
-            status: "paused",
-            start_at: null,
-            total_time: newTotalTime,
-          },
-        }),
-      );
-    }, [active_task]),
-  );
-
   useEffect(() => {
     if (active_task) {
       if (!timerRef.current) {
@@ -749,10 +744,11 @@ const TodoTimer = ({
           const elapsedTime = active_task.start_at
             ? Date.now() - new Date(active_task.start_at).getTime()
             : 0;
-          const newTotalTime = active_task?.total_time + elapsedTime;
 
-          const updatedTotalTime = newTotalTime;
-
+          // const updatedTotalTime = active_task?.total_time + elapsedTime;
+          const updatedTotalTime = active_task?.total_time + elapsedTime;
+          const estimate_time_done =
+            Date.now() + TWENTY_FIVE_MINUTES - updatedTotalTime;
           // Menghitung progress (berapa banyak lingkaran yang terisi)
           progress = Math.min(
             (updatedTotalTime / TWENTY_FIVE_MINUTES) * circumference,
@@ -790,10 +786,6 @@ const TodoTimer = ({
 
             const todo = active_task as Task;
             const sessionData = todo.sessions ? [...todo.sessions] : []; // Copy the old sessions array, or start with an empty array
-            const elapsedTime = todo.start_at
-              ? Date.now() - new Date(todo.start_at).getTime()
-              : 0;
-            const newTotalTime = todo.total_time + elapsedTime;
 
             const notif = {
               title: "Saatnya istirahat",
@@ -804,8 +796,8 @@ const TodoTimer = ({
 
             // Add the new session to the copied array
             sessionData.push({
-              date: new Date().toISOString(),
-              time: newTotalTime as number,
+              date: new Date(estimate_time_done).toISOString(),
+              time: estimate_time_done as number,
             });
 
             dispatch(
@@ -993,7 +985,33 @@ const TodoTimer = ({
             </div>
             <div className="mt-2 flex w-full flex-col gap-2 pr-14 md:flex-row md:items-center md:pr-0">
               <button
-                onClick={() =>
+                onClick={() => {
+                  const todo = active_task as Task;
+                  const sessionData = todo.sessions ? [...todo.sessions] : []; // Copy the old sessions array, or start with an empty array
+                  const elapsedTime = todo.start_at
+                    ? Date.now() - new Date(todo.start_at).getTime()
+                    : 0;
+                  const newTotalTime = todo.total_time + elapsedTime;
+
+                  const notif = {
+                    title: "Saatnya istirahat",
+                    description:
+                      "Sesion " + (sessionData.length + 1) + " has completed",
+                  };
+                  showNotification(notif.title, notif.description);
+
+                  sessionData.push({
+                    date: new Date().toISOString(),
+                    time: newTotalTime as number,
+                  });
+
+                  dispatch(
+                    updateSessionTask({
+                      id: active_task.id as number,
+                      key: date.timestamp as number,
+                      updated_session_task: sessionData,
+                    }),
+                  );
                   dispatch(
                     updateTask({
                       id: active_task.id,
@@ -1003,8 +1021,8 @@ const TodoTimer = ({
                         end_at: new Date().toISOString(),
                       },
                     }),
-                  )
-                }
+                  );
+                }}
                 className="items-center justify-center rounded-md font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 flex h-auto gap-1 px-1.5 py-1 text-sm bg-green-400 hover:bg-green-500 text-gray-600"
               >
                 <CircleCheckBig className="h-5 w-5" />
@@ -2810,7 +2828,40 @@ function TaskCard({ date, active_task, task, isOverlay }: TaskCardProps) {
                       {todo.status !== "done" && (
                         <DropdownMenuItem
                           className="text-green-600"
-                          onClick={() =>
+                          onClick={() => {
+                            if (active_task) {
+                              const todo = active_task as Task;
+                              const sessionData = todo.sessions
+                                ? [...todo.sessions]
+                                : []; // Copy the old sessions array, or start with an empty array
+                              const elapsedTime = todo.start_at
+                                ? Date.now() - new Date(todo.start_at).getTime()
+                                : 0;
+                              const newTotalTime =
+                                todo.total_time + elapsedTime;
+
+                              const notif = {
+                                title: "Saatnya istirahat",
+                                description:
+                                  "Sesion " +
+                                  (sessionData.length + 1) +
+                                  " has completed",
+                              };
+                              showNotification(notif.title, notif.description);
+
+                              sessionData.push({
+                                date: new Date().toISOString(),
+                                time: newTotalTime as number,
+                              });
+
+                              dispatch(
+                                updateSessionTask({
+                                  id: active_task.id as number,
+                                  key: date.timestamp as number,
+                                  updated_session_task: sessionData,
+                                }),
+                              );
+                            }
                             dispatch(
                               updateTask({
                                 id: task.id,
@@ -2820,8 +2871,8 @@ function TaskCard({ date, active_task, task, isOverlay }: TaskCardProps) {
                                   status: "done",
                                 },
                               }),
-                            )
-                          }
+                            );
+                          }}
                         >
                           <CircleCheckBig className="w-5 h-5" />
                           Mark as done
