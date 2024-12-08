@@ -1,17 +1,8 @@
-import React, { useEffect, useState, StrictMode } from "react";
 import Kanban from "./routes/kanban/index.tsx";
 import { createRoot } from "react-dom/client";
-import { createBrowserRouter, RouterProvider } from "react-router-dom";
-import App from "./routes/todo.tsx";
-
-import {
-  loader as loaderTodo,
-  loaderTodoId,
-  action as actionTodo,
-} from "./routes/daily/data/tasks.ts";
-import TodoList from "./routes/daily/index.tsx";
-import TodoForm from "./routes/daily/components/task-form.tsx";
-import DeleteTodo from "./routes/daily/components/data-table-delete-data.tsx";
+import { Outlet, createBrowserRouter, RouterProvider } from "react-router-dom";
+import DailyTasks from "./routes/daily/index.tsx";
+import DailyTasksGarden from "./routes/daily/daily-garden.tsx";
 import ErrorPage from "./error-page";
 import NotFoundError from "./404.tsx";
 import "./index.css";
@@ -23,23 +14,20 @@ const router = createBrowserRouter([
     children: [
       {
         path: "/",
-        // element: <Kanban />,
-        element: <App />,
+        element: <Kanban />,
       },
       {
         path: "/daily",
-        element: <TodoList />,
-        loader: loaderTodo,
-        action: actionTodo,
+        element: <Outlet />,
         children: [
           {
-            path: "/daily/:id",
-            element: <TodoForm />,
-            loader: loaderTodoId,
+            path: "/daily",
+            index: true,
+            element: <DailyTasks />,
           },
           {
-            path: "/daily/delete",
-            element: <DeleteTodo />,
+            path: "/daily/garden",
+            element: <DailyTasksGarden />,
           },
         ],
       },
