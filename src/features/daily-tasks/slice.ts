@@ -12,7 +12,7 @@ const initialState: TodoState = {
 };
 
 import { format, isToday } from "date-fns";
-function get_formatted_date(timestamp: number | undefined) {
+function get_formatted_date(timestamp?: number) {
   const currentDate = timestamp ? new Date(timestamp) : new Date();
   currentDate.setHours(0, 1, 0, 0);
 
@@ -58,6 +58,57 @@ const todoReducer = (
           [formatted_date]: updated_data, // Storing the new array for the formatted date
         },
       };
+    }
+    case "COPY_TASK": {
+      const date_key = get_formatted_date(action.payload?.key);
+      const formatted_date = date_key.key;
+
+      if (state.tasks[formatted_date]) {
+        // Temukan index task berdasarkan ID yang ada
+        const indexData = state.tasks[formatted_date].findIndex(
+          (d) => d.id === action.payload.id,
+        );
+
+        if (indexData !== -1) {
+          const original_data = state.tasks[formatted_date][indexData];
+          const sub_tasks =
+            original_data.sub_tasks.length > 0
+              ? original_data.sub_tasks.map((d) => {
+                  return { ...d, checked: false };
+                })
+              : [];
+
+          // Membuat update pada sub_tasks dan updatedAt tanpa merubah state lama
+          const payload = {
+            ...original_data,
+            id: Date.now(),
+            status: "draft" as "draft",
+            start_at: null,
+            total_time: 0,
+            completed_sessions: 0,
+            end_at: null,
+            sessions: [],
+            sub_tasks,
+            created_at: new Date().toISOString(),
+            updated_at: null,
+          };
+
+          // Create a new array by spreading the existing data and adding the new task
+          const date_key_today = get_formatted_date();
+          const formatted_date_today = date_key_today.key;
+          const existing_data = state.tasks[formatted_date_today] || [];
+          const updated_data = [...existing_data, payload];
+
+          return {
+            tasks: {
+              ...state.tasks,
+              [formatted_date_today]: updated_data, // Storing the new array for the formatted date
+            },
+          };
+        }
+      }
+
+      return state;
     }
     case "ADD_SUB_TASK": {
       const payload: SubTask = {
@@ -292,6 +343,40 @@ const todoReducer = (
           [formatted_date]: updated_task,
         },
       };
+    }
+    case "UPDATE_COLUMN_SUBTASK": {
+      const date_key = get_formatted_date(action.payload?.key);
+      const formatted_date = date_key.key;
+      const updated_sub_task = action.payload.updated_sub_task || [];
+
+      if (state.tasks[formatted_date]) {
+        const taskIndex = state.tasks[formatted_date].findIndex(
+          (task) => task.id === action.payload?.id,
+        );
+
+        if (taskIndex !== -1) {
+          const task = state.tasks[formatted_date][taskIndex];
+
+          const updatedTask = {
+            ...task,
+            sub_tasks: updated_sub_task,
+          };
+
+          return {
+            ...state,
+            tasks: {
+              ...state.tasks,
+              [formatted_date]: [
+                ...state.tasks[formatted_date].slice(0, taskIndex),
+                updatedTask,
+                ...state.tasks[formatted_date].slice(taskIndex + 1),
+              ],
+            },
+          };
+        }
+      }
+
+      return state;
     }
     case "DELETE_TASK": {
       const date_key = get_formatted_date(action.payload?.key);

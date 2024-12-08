@@ -1,10 +1,12 @@
 import { RenderTracker } from "@/components/render-tracker.tsx";
+import { toast } from "@/components/ui/use-toast";
 import { Badge } from "@/components/ui/badge";
 import React from "react";
 import { useAppSelector, useAppDispatch } from "@/store/hooks";
 import store, { initial_daily_tasks } from "@/store/store";
 import {
   addTask,
+  copyTask,
   addSubTask,
   updateTask,
   deleteTask,
@@ -12,6 +14,7 @@ import {
   updateSubTask,
   updateSessionTask,
   updateTasksColumn,
+  updateSubTasksColumn,
   Task,
   setTasks,
 } from "@/features/daily-tasks/actions";
@@ -184,6 +187,11 @@ const calculateStreak = (data) => {
     longest_streak,
   };
 };
+
+async function save_data_daily_tasks(data) {
+  set_cache("daily-tasks", data);
+}
+
 const TodoNavigator = ({ data }) => {
   const [day_timestamp, set_day_timestamp] = useState<number | undefined>();
   const date_key = get_formatted_date(day_timestamp);
@@ -204,6 +212,13 @@ const TodoNavigator = ({ data }) => {
   const all_session = calculateGlobalSessionCount(data);
   const streak_data = calculateStreak(data);
 
+  useBeforeUnload(
+    React.useCallback(() => {
+      save_data_daily_tasks(data);
+      // localStorage.setItem("daily-tasks", JSON.stringify(data));
+    }, [data]),
+  );
+
   return (
     <div>
       <div>
@@ -218,13 +233,15 @@ const TodoNavigator = ({ data }) => {
         />
         <KanbanBoard
           tasks={todos}
-          goToNextDate={goToNextDate}
-          goToPreviousDate={goToPreviousDate}
           date={date_key}
           active_task={active_task}
           all_session={all_session}
           streak_data={streak_data}
         />
+
+        {(date_key.is_today || date_key.is_tomorrow) && (
+          <AddTodo date={date_key} />
+        )}
         {/*<Debug data={todos} />*/}
       </div>
     </div>
@@ -239,7 +256,7 @@ const TaskFirst = () => {
     askNotificationPermission();
   }, []);
 
-  if (!initial_data)
+  if (!initial_data) {
     return (
       <div className="relative inset-0  min-h-screen overflow-y-auto w-full bg-gray-200 dark:bg-gradient-to-tl dark:from-gray-950 dark:to-gray-900">
         <main className="mx-auto max-w-3xl w-full rounded-base p-3 bg-gray-200 dark:bg-gradient-to-tl dark:from-gray-950 dark:to-gray-900">
@@ -247,6 +264,7 @@ const TaskFirst = () => {
         </main>
       </div>
     );
+  }
 };
 
 export default TaskFirst;
@@ -259,33 +277,6 @@ type Category = {
   color: string;
 };
 
-type SubTask = {
-  id: number;
-  checked: boolean;
-  title: string;
-  category: Category;
-};
-
-type Task = {
-  id: number;
-  status: string;
-  title: string;
-  category: Category;
-  start_at: string | null;
-  total_time: number;
-  target_sessions: number;
-  completed_sessions: number;
-  end_at: string | null;
-  sessions: any[];
-  sub_tasks: SubTask[];
-  created_at: string;
-  updated_at: string;
-};
-
-type TaskProps = {
-  taskData: Record<string, Task[]>;
-};
-
 function get_formatted_date(timestamp?: number | null) {
   const currentDate = timestamp ? new Date(timestamp) : new Date();
   currentDate.setHours(0, 1, 0, 0);
@@ -295,113 +286,10 @@ function get_formatted_date(timestamp?: number | null) {
     q: format(currentDate, "EEEE, dd MMM yyyy"),
     timestamp: currentDate.getTime(),
     is_today: isToday(currentDate),
+    is_yesterday: isYesterday(currentDate),
+    is_tomorrow: isTomorrow(currentDate),
   };
 }
-const TaskList: React.FC<TaskProps> = ({ todos }) => {
-  const dispatch = useAppDispatch();
-
-  return (
-    <div className="ring-2 p-3 rounded-md">
-      {todos.map((task) => (
-        <div key={task.id} style={{ marginBottom: "20px" }}>
-          <button
-            className="text-sm bg-red-600 text-white mx-1 rounded-md px-3 py-1 "
-            onClick={() => dispatch(deleteTask({ id: task.id }))}
-          >
-            Delete
-          </button>
-          <textarea
-            className="border border-blue-500 p-3"
-            defaultValue={task.title}
-            placeholder="Untitled Task"
-            onBlur={(e) => {
-              dispatch(
-                updateTask({
-                  id: task.id,
-                  updated_task: {
-                    title: e.target.value,
-                  },
-                }),
-              );
-            }}
-          />
-          <h3>{task.title || "Untitled Task"}</h3>
-          <div>Status: {task.status}</div>
-          <div>Start: {task.start_at ? task.start_at : "N/A"}</div>
-          <div>End: {task.end_at ? task.end_at : "N/A"}</div>
-
-          <h4>Sub-Tasks</h4>
-          {task.sub_tasks.length === 0 ? (
-            <p>No sub-tasks</p>
-          ) : (
-            <ul>
-              {task.sub_tasks.map((subTask, index) => (
-                <li
-                  style={{ animationDelay: `${index * 0.03}s` }}
-                  key={subTask.id}
-                  className=" animate-slide-bottom [animation-fill-mode:backwards]"
-                >
-                  <input
-                    type="checkbox"
-                    defaultChecked={subTask.checked}
-                    onChange={(e) => {
-                      dispatch(
-                        updateSubTask({
-                          id: task.id,
-                          sub_task_id: subTask.id,
-                          updated_sub_task: {
-                            checked: e.target.checked,
-                          },
-                        }),
-                      );
-                    }}
-                  />
-
-                  <textarea
-                    className="border border-blue-500 p-3"
-                    defaultValue={subTask.title}
-                    placeholder="Untitled Sub-Task"
-                    onBlur={(e) => {
-                      dispatch(
-                        updateSubTask({
-                          id: task.id,
-                          sub_task_id: subTask.id,
-                          updated_sub_task: {
-                            title: e.target.value,
-                          },
-                        }),
-                      );
-                    }}
-                  />
-                  <button
-                    className="text-sm bg-red-600 text-white mx-1 rounded-md px-3 py-1 "
-                    onClick={() =>
-                      dispatch(
-                        deleteSubTask({
-                          id: task.id,
-                          sub_task_id: subTask.id,
-                        }),
-                      )
-                    }
-                  >
-                    Delete
-                  </button>
-                </li>
-              ))}
-            </ul>
-          )}
-
-          <button
-            className="text-sm bg-red-600 text-white mx-1 rounded-md px-3 py-1 "
-            onClick={() => dispatch(addSubTask({ id: task.id }))}
-          >
-            Add Sub-Task
-          </button>
-        </div>
-      ))}
-    </div>
-  );
-};
 
 import {
   AlertDialogProvider,
@@ -411,6 +299,7 @@ import {
 } from "@/components/ui/alert-dialog-provider.tsx";
 import {
   ChevronsUpDown,
+  ChevronDown,
   EllipsisVertical,
   ChartLine,
   Activity,
@@ -431,6 +320,7 @@ import {
   Trash2,
   CircleCheckBig,
   Squircle,
+  Filter,
 } from "lucide-react";
 import {
   Collapsible,
@@ -446,30 +336,12 @@ import {
 
 import { Blockquote, BlockquoteAuthor } from "@/components/ui/blockquote";
 
-const BlockquoteDemo = () => {
-  return (
-    <Blockquote>
-      Happiness lies not in the mere possession of money; it lies in the joy of
-      achievement, in the thrill of creative effort.
-      <BlockquoteAuthor>Franklin Roosevelt</BlockquoteAuthor>
-    </Blockquote>
-  );
-};
-
-import { AutosizeTextarea } from "@/components/ui/autosize-textarea";
 // import { Button } from "@/components/ui/button";
+// import { askNotificationPermission } from "./components/notifications";
+import { AutosizeTextarea } from "@/components/ui/autosize-textarea";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-// import { askNotificationPermission } from "./components/notifications";
 import { Debug } from "@/components/debug";
-import { Form, Outlet } from "react-router-dom";
-import { useFetcher } from "react-router-dom";
-import {
-  useLoaderData,
-  useSubmit,
-  useNavigate,
-  useNavigation,
-} from "react-router-dom";
 
 import {
   ChevronLeftIcon,
@@ -478,190 +350,7 @@ import {
   DoubleArrowRightIcon,
 } from "@radix-ui/react-icons";
 import { Link } from "react-router-dom";
-// import { Button } from "@/components/ui/button";
 
-function AddTodo({ count, date_key }: { count: number }) {
-  const dispatch = useAppDispatch();
-  return (
-    <Button
-      onClick={() => dispatch(addTask({ key: date_key }))}
-      className="px-2 bg-blue-400 hover:bg-blue-500 dark:bg-blue-500 dark:hover:bg-blue-400 text-white"
-    >
-      <ListPlus />
-      {count}
-    </Button>
-  );
-}
-
-function TestCombo() {
-  const initialCategories = [{ label: "Work", value: "Work" }];
-
-  const [categories, setCategories] =
-    useState<{ label: string; value: string }[]>(initialCategories);
-  const [value, setValue] = useState<string>("");
-  const [open, setOpen] = useState(false);
-
-  // Menyimpan kategori ke localStorage saat ada perubahan
-  useEffect(() => {
-    const savedCategories = localStorage.getItem("categories");
-    if (savedCategories) {
-      setCategories(JSON.parse(savedCategories));
-    }
-  }, []);
-
-  // Menyimpan kategori yang telah diubah ke localStorage
-  useEffect(() => {
-    if (categories.length > 0) {
-      localStorage.setItem("categories", JSON.stringify(categories));
-    }
-  }, [categories]);
-
-  const addCategory = (category: string) => {
-    if (category && !categories.some((cat) => cat.value === category)) {
-      const newCategory = { label: category, value: category.toLowerCase() };
-      setCategories([...categories, newCategory]);
-    }
-  };
-
-  const removeCategory = (category: string) => {
-    setCategories(categories.filter((cat) => cat.value !== category));
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter" && value.trim()) {
-      addCategory(value.trim()); // Menambahkan kategori jika ada input
-    }
-  };
-  return (
-    <>
-      {/*<Combobox
-        mode="single" //single or multiple
-        options={categories}
-        placeholder="Select option..."
-        selected={value} // string or array
-        onChange={(value) => setValue(value)}
-        onCreate={(value) => {
-          addCategory(value);
-        }}
-      />*/}
-      <Combobox
-        mode="multiple" //single or multiple
-        options={categories}
-        placeholder="Select option..."
-        selected={[value]} // string or array
-        onChange={(value) => setValue(value)}
-        onCreate={(value) => {
-          addCategory(value);
-        }}
-      />
-    </>
-  );
-}
-
-import MultipleSelector, { Option } from "@/components/ui/multiple-selector";
-
-const frameworks: Option[] = [
-  {
-    value: "next.js",
-    label: "Next.js",
-  },
-  {
-    value: "sveltekit",
-    label: "SvelteKit",
-  },
-  {
-    value: "nuxt.js",
-    label: "Nuxt.js",
-    disable: true,
-  },
-  {
-    value: "remix",
-    label: "Remix",
-  },
-  {
-    value: "astro",
-    label: "Astro",
-  },
-  {
-    value: "angular",
-    label: "Angular",
-  },
-  {
-    value: "vue",
-    label: "Vue.js",
-  },
-  {
-    value: "react",
-    label: "React",
-  },
-  {
-    value: "ember",
-    label: "Ember.js",
-  },
-  {
-    value: "gatsby",
-    label: "Gatsby",
-  },
-  {
-    value: "eleventy",
-    label: "Eleventy",
-    disable: true,
-  },
-  {
-    value: "solid",
-    label: "SolidJS",
-  },
-  {
-    value: "preact",
-    label: "Preact",
-  },
-  {
-    value: "qwik",
-    label: "Qwik",
-  },
-  {
-    value: "alpine",
-    label: "Alpine.js",
-  },
-  {
-    value: "lit",
-    label: "Lit",
-  },
-];
-
-function SelectDemoMulti() {
-  return (
-    <div className="space-y-2">
-      <Label>Multiselect</Label>
-      <MultipleSelector
-        commandProps={{
-          label: "Select frameworks",
-        }}
-        value={frameworks.slice(0, 2)}
-        defaultOptions={frameworks}
-        placeholder="Select frameworks"
-        hideClearAllButton
-        hidePlaceholderWhenSelected
-        emptyIndicator={<p className="text-center text-sm">No results found</p>}
-      />
-      <p
-        className="mt-2 text-xs text-muted-foreground"
-        role="region"
-        aria-live="polite"
-      >
-        Inspired by{" "}
-        <a
-          className="underline hover:text-foreground"
-          href="https://shadcnui-expansions.typeart.cc/docs/multiple-selector"
-          target="_blank"
-          rel="noopener nofollow"
-        >
-          shadcn/ui expansions
-        </a>
-      </p>
-    </div>
-  );
-}
 // Daftar warna Tailwind yang umum
 const colors = [
   "red",
@@ -705,15 +394,7 @@ import { useState, useRef } from "react";
 
 import { useEffect } from "react";
 import { Check, Sun, Moon, Monitor } from "lucide-react";
-// import { cn } from "@/lib/utils";
-// import {
-//   DropdownMenu,
-//   DropdownMenuContent,
-//   DropdownMenuItem,
-//   DropdownMenuTrigger,
-// } from "@/components/ui/dropdown-menu";
 import { useTheme } from "@/components/custom/theme-provider.tsx";
-// import { Button } from "@/components/ui/button";
 
 function ThemeSwitch() {
   const { theme, setTheme } = useTheme();
@@ -819,13 +500,13 @@ const TaskApp = ({
 
   return (
     <div className="">
-      <pre className="hidden text-sm max-h-[30vh] overflow-y-auto border-2 shadow-light">
-        {JSON.stringify(todos, null, 2)}
-      </pre>
       {/*<RenderTracker name="TASK APP" stateName={totalTargetSessions} />*/}
-      <section className="relative mx-auto flex w-full items-center">
+      <section className="relative mx-auto flex items-center justify-between w-full items-center">
+        <h1 className="pl-2 my-2 border-l-4  font-sans font-bold border-teal-400  dark:text-gray-200">
+          Huda
+        </h1>
         <div className="ml-auto flex items-center gap-2">
-          <AddTodo count={todos.length} date_key={date.timestamp} />
+          {/*<AddTodo count={todos.length} date_key={date.timestamp} />*/}
           {/*<Popover>
             <PopoverTrigger className="flex rounded-lg bg-green-400 p-2 text-green-100 transition-all duration-500 ease-in-out">
               <ChartLine />
@@ -897,7 +578,7 @@ const TaskApp = ({
         </div>
         <div
           style={{ animationDelay: `0.1s` }}
-          className="animate-roll-reveal [animation-fill-mode:backwards] ml-auto flex w-full items-center  bg-gradient-to-l from-gray-100 via-gray-100/80 to-gray-100/0 py-2 pr-2 dark:from-gray-700 mb-3 mt-1 rounded-md"
+          className="animate-roll-reveal [animation-fill-mode:backwards] ml-auto flex w-full items-center  bg-gradient-to-l from-gray-100 via-gray-100/80 to-gray-100/0 py-2 pr-2 dark:from-gray-700 mt-1 rounded-md"
           id="date-navigation"
         >
           <div className="mb-1 mt-3 flex justify-end">
@@ -935,7 +616,10 @@ const TaskApp = ({
   );
 };
 
-const ProgressBarIndicator = ({ totalTargetSessions, total_sessions }) => {
+const ProgressBarIndicator = ({
+  totalTargetSessions,
+  total_sessions,
+}: { totalTargetSessions: number; total_sessions: number }) => {
   return (
     <React.Fragment>
       <div
@@ -957,7 +641,7 @@ const ProgressBarIndicator = ({ totalTargetSessions, total_sessions }) => {
             <Crosshair className="h-5 w-5 animate-pulse" />
           </div>
           <div
-            className="absolute top-0 flex h-8 items-center justify-end gap-1 overflow-hidden bg-green-400 px-2 text-gray-600 rounded-l transition-all duration-500 ease-in-out"
+            className="z-10 absolute top-0 flex h-8 items-center justify-end gap-1 overflow-hidden bg-green-400 px-2 text-gray-600 rounded-l transition-all duration-500 ease-in-out"
             style={{
               width: `${(total_sessions > 16 ? 16 / 16 : total_sessions / 16) * 100}%`,
             }}
@@ -968,7 +652,7 @@ const ProgressBarIndicator = ({ totalTargetSessions, total_sessions }) => {
             >
               <Circle className="h-5 w-5" />
               {total_sessions} sesi
-              <ArrowRight className=" ml-2 h-5 w-5 bounce-left-right" />
+              <ArrowRight className="ml-2 h-5 w-5 bounce-left-right" />
             </div>
           </div>
         </div>
@@ -992,41 +676,29 @@ const ContainerList = ({ todos, date, active_task }) => {
 };
 
 const EmptyTodo = ({ date }) => {
-  const dispatch = useAppDispatch();
   return (
     <div className="">
       <p className="text-center text-gray-600 leading-relaxed ">
-        No task in {date.q}
+        No {date.is_tomorrow && " planing "} task in {date.q}
       </p>
-      <Button
-        onClick={() => dispatch(addTask({ key: date.timestamp }))}
-        variant="link"
-      >
-        <Plus className="h-7 w-7" /> Add Task
-      </Button>
     </div>
   );
 };
 
-const TodoView = ({ todos, date, active_task }) => {
+const AddTodo = ({ date }) => {
+  const dispatch = useAppDispatch();
   return (
-    <div className="grid gap-1">
-      {todos.map((todo, index) => {
-        return (
-          <TodoForm
-            key={todo.id}
-            index={index}
-            task={todo}
-            date={date}
-            active_task={active_task}
-          />
-        );
-      })}
-    </div>
+    <Button
+      onClick={() => dispatch(addTask({ key: date.timestamp }))}
+      variant="link"
+    >
+      <Plus className="h-7 w-7" /> Add Task
+    </Button>
   );
 };
 
-const TWENTY_FIVE_MINUTES = 25 * 60 * 1000; // 25 menit dalam milidetik
+// const TWENTY_FIVE_MINUTES = 25 * 60 * 1000; // 25 menit dalam milidetik
+const TWENTY_FIVE_MINUTES = 5 * 60 * 1000; // 25 menit dalam milidetik
 const radius = 40; // Radius lingkaran
 const circumference = 2 * Math.PI * radius; // Keliling lingkaran
 
@@ -1058,6 +730,34 @@ function showNotification(title: string, description: string) {
     console.log("Notification permission not granted.");
   }
 }
+
+interface ProgressBarProps {
+  current: number;
+  total: number;
+}
+
+const ProgressBar: React.FC<ProgressBarProps> = ({ current, total }) => {
+  const percentage = (current / total) * 100;
+
+  return (
+    <div className="w-full max-w-md mx-auto p-4">
+      {/* Label */}
+      <div className="flex justify-between items-center mb-2">
+        <span className="text-sm font-medium text-gray-700">Progress</span>
+        <span className="text-sm font-medium text-gray-700">
+          {current} / {total}
+        </span>
+      </div>
+      {/* Progress Bar */}
+      <div className="w-full bg-gray-200 rounded-lg h-4 overflow-hidden">
+        <div
+          className="bg-blue-500 h-4 rounded-lg transition-all duration-500 ease-in-out animate-pulse"
+          style={{ width: `${percentage}%` }}
+        ></div>
+      </div>
+    </div>
+  );
+};
 
 const TodoTimer = ({
   todos,
@@ -1135,11 +835,6 @@ const TodoTimer = ({
           // Cek apakah timer sudah mencapai 25 menit
           if (updatedTotalTime >= TWENTY_FIVE_MINUTES) {
             clearInterval(timerRef.current); // Berhenti menjalankan timer
-            const notif = {
-              title: "Saatnya istirahat",
-              description: active_task.title + " has completed",
-            };
-            showNotification(notif.title, notif.description);
 
             const todo = active_task as Task;
             const sessionData = todo.sessions ? [...todo.sessions] : []; // Copy the old sessions array, or start with an empty array
@@ -1147,6 +842,13 @@ const TodoTimer = ({
               ? Date.now() - new Date(todo.start_at).getTime()
               : 0;
             const newTotalTime = todo.total_time + elapsedTime;
+
+            const notif = {
+              title: "Saatnya istirahat",
+              description:
+                "Sesion " + (sessionData.length + 1) + " has completed",
+            };
+            showNotification(notif.title, notif.description);
 
             // Add the new session to the copied array
             sessionData.push({
@@ -1183,7 +885,7 @@ const TodoTimer = ({
   }, [todos]); // Update setiap todos berubah
 
   return (
-    <div className="flex items-start justify-between gap-x-3 pt-4 px-4 md:gap-x-5 mt-5 min-h-[152px]">
+    <div className="flex items-start justify-between gap-x-3 pt-4 px-4 md:gap-x-5 mt-2 h-[130px]">
       <div className="flex items-start gap-6 md:gap-8">
         <div
           style={{ animationDelay: `0.05s` }}
@@ -1309,33 +1011,27 @@ const TodoTimer = ({
             <div className="font-bold md:text-xl line-clamp-1 max-w-[200px]">
               {active_task?.title !== "" ? active_task.title : "Untitled"}
             </div>
-            <div className="h-3">
+
+            <div className="h-2.5">
               <div className="absolute flex gap-1">
                 {new Array(16).fill(null).map((_, index) => (
-                  <button
-                    onClick={() => {
-                      dispatch(
-                        updateTask({
-                          id: active_task.id,
-                          key: date.timestamp,
-                          updated_task: {
-                            target_sessions: index + 1,
-                          },
-                        }),
-                      );
-                    }}
-                    key={index} // Gunakan key untuk identifikasi unik
-                    type="button"
-                    style={{ animationDelay: `${index * 0.03}s` }}
-                    className={cn(
-                      "h-3 w-3 shrink-0 cursor-pointer rounded-full ",
-                      active_task?.sessions?.length >= index + 1
-                        ? "bg-green-400"
-                        : active_task?.target_sessions >= index + 1
-                          ? "bg-gray-400"
-                          : "bg-gray-200 hidden group-hover:block  transition-all duration-300 animate-roll-reveal [animation-fill-mode:backwards] ",
+                  <div className="relative inline-flex gap-1" key={index}>
+                    <div
+                      className={cn(
+                        "h-2.5 w-2.5 shrink-0 cursor-pointer rounded-full ",
+                        "transition-all duration-500 animate-roll-reveal [animation-fill-mode:backwards] ",
+                        active_task?.target_sessions >= index + 1 &&
+                          "bg-gray-400",
+                        active_task?.sessions?.length > index && "bg-green-400",
+                      )}
+                    />
+                    {active_task?.sessions?.length === index && (
+                      <React.Fragment>
+                        <div className="w-3 h-3 bg-yellow-400 rounded-full absolute -top-0.5 left-0 animate-ping" />
+                        <div className="w-2.5 h-2.5 bg-yellow-400 rounded-full absolute top-0 left-0 animate-pulse" />
+                      </React.Fragment>
                     )}
-                  />
+                  </div>
                 ))}
               </div>
             </div>
@@ -1343,7 +1039,7 @@ const TodoTimer = ({
               {active_task?.sessions?.length} dari{" "}
               {active_task?.target_sessions} target sesi
             </div>
-            <div className="mt-3 flex w-full flex-col gap-2 pr-14 md:flex-row md:items-center md:pr-0">
+            <div className="mt-2 flex w-full flex-col gap-2 pr-14 md:flex-row md:items-center md:pr-0">
               <button
                 onClick={() =>
                   dispatch(
@@ -1357,7 +1053,7 @@ const TodoTimer = ({
                     }),
                   )
                 }
-                className="items-center justify-center rounded-md font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 flex h-auto gap-1 p-1 py-1 text-sm bg-green-400 text-white hover:bg-green-500"
+                className="items-center justify-center rounded-md font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 flex h-auto gap-1 px-1.5 py-1 text-sm bg-green-400 hover:bg-green-500"
               >
                 <Check className="h5 w-5" />
                 Mark as Done
@@ -1441,7 +1137,7 @@ const TodoTimer = ({
         <div
           style={{ animationDelay: `0.3s` }}
           className={cn(
-            "sm:block hidden relative w-[80px]",
+            "sm:block hidden relative w-[80px] pt-3",
             active_task &&
               "animate-roll-reveal [animation-fill-mode:backwards]",
           )}
@@ -1452,7 +1148,7 @@ const TodoTimer = ({
         <div
           style={{ animationDelay: `0.1s` }}
           className={cn(
-            "sm:block hidden relative w-[80px]",
+            "sm:block hidden relative w-[80px] pt-1",
             !active_task && "animate-slide-top [animation-fill-mode:backwards]",
           )}
         >
@@ -1469,6 +1165,8 @@ import {
   endOfMonth,
   eachDayOfInterval,
   isToday,
+  isYesterday,
+  isTomorrow,
   isWeekend,
   addMonths,
   subMonths,
@@ -2229,833 +1927,6 @@ const TaskSchema = z.object({
     )
     .optional(),
 });
-import { useDebounceFetcher } from "@/lib/use-debounce-fetcher.ts";
-
-function transformedSubTasks(task) {
-  if (!task) return [];
-  const data =
-    task?.sub_tasks?.length > 0
-      ? task.sub_tasks.map((subTask) => ({
-          ...subTask,
-          checked: subTask.checked ? "on" : "off", // Transformasi boolean ke "on"/"off"
-        }))
-      : [];
-  return data;
-}
-const TodoForm: React.FC = ({ task, index, date, active_task }) => {
-  const todo = task;
-  const submit = useSubmit();
-  const routeAction = `/daily?day=${date.timestamp}`;
-
-  const totalSessionTime = todo.sessions.reduce(
-    (total_time, session) => total_time + session.time,
-    0,
-  );
-  const today = new Date();
-  const yesterday = new Date(date.timestamp);
-  today.setHours(0, 1, 0, 0);
-  const todayTimestamp = today.getTime();
-  const isYesterday = todayTimestamp < date.timestamp;
-  const is_today = todayTimestamp === date.timestamp;
-
-  const dispatch = useAppDispatch();
-  return (
-    <div
-      style={{ animationDelay: `${index * 0.1}s` }}
-      className={cn(
-        "relative animate-roll-reveal [animation-fill-mode:backwards]  inset-0 w-full transition-all ease-in-out duration-500",
-      )}
-    >
-      <Collapsible defaultOpen={true}>
-        <div
-          className={cn(
-            "relative flex items-start overflow-hidden dark:bg-gradient-to-l dark:from-gray-950/80 dark:to-gray-800 py-2 mb-1.5 bg-gray-50 rounded-lg shadow-md",
-            active_task && todo.status !== "progress"
-              ? "bg-white/40 text-muted-foreground opacity-80"
-              : active_task && todo.status === "progress"
-                ? "bg-orange-100 dark:bg-orange-400 bg-gradient-to-l from-gray-50 dark:from-orange-950 opacity-100"
-                : todo.status === "done"
-                  ? "bg-green-100 dark:bg-green-900 bg-gradient-to-l via-white dark:via-black from-green-50 dark:from-green-950 opacity-100"
-                  : "",
-          )}
-        >
-          <div
-            className="-mt-0 h-full cursor-pointer px-1 py-1 text-gray-300 hover:text-gray-800 dark:text-gray-600 dark:hover:text-gray-400"
-            style={{ touchAction: "none" }}
-            draggable="true"
-          >
-            <GripVertical className="absolute top-1/2 transform -translate-y-1/2 left-2  z-20 h-5 w-5 mt-1" />
-          </div>
-          <div className="mr-1">
-            {todo.status === "done" && (
-              <CircleCheckBig className="absolute top-0 -right-4 w-28 h-28 text-green-500 dark:text-green-400 opacity-30" />
-            )}
-            <div className="flex gap-2 pl-0 pt-1">
-              {is_today ? (
-                <React.Fragment>
-                  {todo.status === "done" ? (
-                    <CircleCheckBig className="w-6 h-6 text-green-500 rounded-full" />
-                  ) : todo.start_at ? (
-                    <button
-                      onClick={() => {
-                        const elapsedTime = todo.start_at
-                          ? Date.now() - new Date(todo.start_at).getTime()
-                          : 0;
-                        const newTotalTime = todo.total_time + elapsedTime;
-
-                        dispatch(
-                          updateTask({
-                            id: todo.id,
-                            key: date.timestamp,
-                            updated_task: {
-                              status: "paused",
-                              start_at: null,
-                              total_time: newTotalTime,
-                            },
-                          }),
-                        );
-                      }}
-                      className={cn(
-                        "flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-yellow-500  text-white",
-                        active_task &&
-                          "animate-roll-reveal [animation-fill-mode:backwards]",
-                      )}
-                    >
-                      <Pause className="h-5 w-5" />
-                    </button>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={() =>
-                        dispatch(
-                          updateTask({
-                            id: todo.id,
-                            key: date.timestamp,
-                            updated_task: {
-                              title: todo.title,
-                              status: "progress",
-                              start_at: new Date().toISOString(),
-                            },
-                          }),
-                        )
-                      }
-                      className={cn(
-                        "flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-blue-500 pl-0.5 text-white",
-                        active_task &&
-                          "animate-roll-reveal [animation-fill-mode:backwards]",
-                      )}
-                    >
-                      <Play className="h-5 w-5" />
-                    </button>
-                  )}
-                </React.Fragment>
-              ) : (
-                <button className="h-6 w-6 shrink-0 items-center justify-center rounded-full hover:bg-gray-200 dark:hover:bg-gray-500 ">
-                  <ArrowRight />
-                </button>
-              )}
-            </div>
-          </div>
-          <div className="w-full group">
-            <div className="relative flex w-full items-start">
-              <AutosizeTextarea
-                key={`title-${todo.id}`}
-                name="title"
-                defaultValue={todo.title}
-                onBlur={(e) => {
-                  dispatch(
-                    updateTask({
-                      id: task.id,
-                      key: date.timestamp,
-                      updated_task: {
-                        title: e.target.value,
-                      },
-                    }),
-                  );
-                }}
-                style={{ resize: "none" }}
-                className="w-full bg-transparent p-1 outline-none text-md border-none focus-visible:ring-offset-0 focus-visible:ring-0 outline-none"
-                minHeight={20}
-                maxHeight={800}
-                placeholder="Untitled"
-                autoComplete="off"
-              />
-              <div className="ml-auto flex items-center gap-2 pr-2 pt-2">
-                <CollapsibleTrigger data-state="open">
-                  <ChevronsUpDown className="w-4 h-4" />
-                  <span className="sr-only">Toggle</span>
-                </CollapsibleTrigger>
-                <DropdownMenu>
-                  <DropdownMenuTrigger>
-                    <EllipsisVertical className="w-4 h-4" />
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-[200px]">
-                    <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                    <DropdownMenuGroup>
-                      <DropdownMenuItem
-                        onClick={() => dispatch(addSubTask({ id: todo.id }))}
-                      >
-                        <Plus /> Add Subtask
-                      </DropdownMenuItem>
-                      {todo.status !== "done" && (
-                        <DropdownMenuItem
-                          className="text-green-600"
-                          onClick={() =>
-                            dispatch(
-                              updateTask({
-                                id: task.id,
-                                key: date.timestamp,
-                                updated_task: {
-                                  title: todo.title,
-                                  status: "done",
-                                },
-                              }),
-                            )
-                          }
-                        >
-                          <CircleCheckBig className="w-5 h-5" />
-                          Mark as done
-                        </DropdownMenuItem>
-                      )}
-                      <DropdownMenuSeparator />
-
-                      <AlertDialogProvider>
-                        <DeleteTask
-                          task_id={todo.id}
-                          task_title={todo.title}
-                          timestamp={date.timestamp}
-                        />
-                      </AlertDialogProvider>
-                    </DropdownMenuGroup>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
-            </div>
-            <div>
-              <div className="relative ml-1 block py-0.5 ">
-                <div className="flex items-end">
-                  <div className="flex items-center justify-start gap-1 h-4">
-                    {new Array(16).fill(null).map((_, index) => (
-                      <button
-                        onClick={() => {
-                          dispatch(
-                            updateTask({
-                              id: task.id,
-                              key: date.timestamp,
-                              updated_task: {
-                                title: todo.title,
-                                target_sessions: index + 1,
-                              },
-                            }),
-                          );
-                        }}
-                        key={index} // Gunakan key untuk identifikasi unik
-                        type="button"
-                        style={{ animationDelay: `${index * 0.03}s` }}
-                        className={cn(
-                          "h-[12px] w-[12px] shrink-0 cursor-pointer rounded-full ",
-                          todo?.sessions?.length >= index + 1
-                            ? "bg-green-400"
-                            : todo?.target_sessions >= index + 1
-                              ? "bg-gray-500"
-                              : "bg-gray-300  hidden group-hover:block transition-all duration-300 animate-roll-reveal [animation-fill-mode:backwards] ",
-                        )}
-                      />
-                    ))}
-                    <button
-                      style={{ animationDelay: `${16 * 0.03}s` }}
-                      onClick={() => {
-                        dispatch(
-                          updateTask({
-                            id: task.id,
-                            key: date.timestamp,
-                            updated_task: {
-                              title: todo.title,
-                              target_sessions: 0,
-                            },
-                          }),
-                        );
-                      }}
-                      className="h-3 w-3 shrink-0 cursor-pointer rounded-full bg-red-400 text-white flex items-center justify-center hidden group-hover:flex  animate-roll-reveal [animation-fill-mode:backwards] "
-                    >
-                      <X />
-                    </button>
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-between gap-x-1.5 pr-2 text-sm mt-1">
-                  <div className={todo?.start_at ? "todo-progress" : ""}>
-                    {new Date(totalSessionTime).toISOString().substr(11, 8)}
-                  </div>
-                  <SelectDemo task={task} date={date} />
-                </div>
-                <div className="flex">
-                  <div className="hidden">
-                    <button className="flex items-center gap-1 rounded bg-gray-100 px-1.5 py-0.5 text-xs hover:bg-gray-200 dark:bg-gray-600 dark:hover:bg-gray-500 ">
-                      Move to today <ArrowRight className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-        <CollapsibleContent className="CollapsibleContent space-y-2 text-text font-base mt-1">
-          {task.sub_tasks?.map((subtask, index) => {
-            return (
-              <div
-                key={index}
-                className={cn(
-                  "ml-5 relative flex items-start overflow-hidden dark:bg-gradient-to-l dark:from-gray-950/80 dark:to-gray-800 bg-gray-50 rounded-lg py-2 mb-1.5 shadow-md",
-                  active_task && todo.status !== "progress"
-                    ? "bg-white/40 text-muted-foreground opacity-80"
-                    : subtask.checked
-                      ? "bg-green-100 dark:bg-green-900 bg-gradient-to-l via-white dark:via-black from-green-50 dark:from-green-950 opacity-100"
-                      : "opacity-100",
-                )}
-              >
-                {subtask.checked && (
-                  <CircleCheckBig className="absolute top-0 -right-4 w-28 h-28 text-green-500 dark:text-green-400 opacity-30" />
-                )}
-                <div
-                  className="-mt-0 h-full cursor-pointer px-1 py-1 text-gray-300 hover:text-gray-800 dark:text-gray-600 dark:hover:text-gray-400"
-                  style={{ touchAction: "none" }}
-                  draggable="true"
-                >
-                  <GripVertical className="absolute top-1/2 transform -translate-y-1/2 left-2  z-20 h-5 w-5 mt-1" />
-                </div>
-                <div className="ml-1">
-                  <div className="flex gap-2 pl-0 pt-1 mr-2 mt-1">
-                    <input
-                      type="hidden"
-                      defaultValue={subtask.id}
-                      key={`sub_tasks[${index}].id`}
-                      name={`sub_tasks[${index}].id`}
-                      id={`sub_tasks[${index}].id`}
-                    />
-                    <input
-                      type="checkbox"
-                      defaultChecked={subtask.checked}
-                      onChange={(e) => {
-                        dispatch(
-                          updateSubTask({
-                            id: task.id,
-                            key: date.timestamp,
-                            sub_task_id: subtask.id,
-                            updated_sub_task: {
-                              title: subtask.title,
-                              checked: e.target.checked,
-                            },
-                          }),
-                        );
-                      }}
-                      className="accent-green-400 scale-150"
-                      key={`sub_tasks[${index}].checked`}
-                      name={`sub_tasks[${index}].checked`}
-                      id={`sub_tasks[${index}].checked`}
-                    />
-                  </div>
-                </div>
-                <div className="w-full">
-                  <div className="relative flex w-full items-start">
-                    <AutosizeTextarea
-                      defaultValue={subtask.title}
-                      key={`sub_tasks[${index}].title`} // Dinamis berdasarkan index
-                      name={`sub_tasks[${index}].title`} // Dinamis berdasarkan index
-                      id={`sub_tasks[${index}].title`} // Dinamis ber
-                      onBlur={(e) => {
-                        dispatch(
-                          updateSubTask({
-                            id: task.id,
-                            key: date.timestamp,
-                            sub_task_id: subtask.id,
-                            updated_sub_task: {
-                              title: e.target.value,
-                            },
-                          }),
-                        );
-                      }}
-                      style={{ resize: "none" }}
-                      className="w-full bg-transparent p-1 outline-none text-md border-none focus-visible:ring-offset-0 focus-visible:ring-0 outline-none"
-                      maxHeight={800}
-                      placeholder="Untitled"
-                      autoComplete="off"
-                    />
-                    <div className="ml-auto flex items-center gap-2 pr-2 pt-2">
-                      <div className="">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger>
-                            <EllipsisVertical className="w-4 h-4 " />
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <AlertDialogProvider>
-                              <DeleteTask
-                                task_id={task.id}
-                                sub_task_id={subtask.id}
-                                task_title={todo.title}
-                                sub_task_title={subtask.title}
-                                timestamp={date.timestamp}
-                              />
-                            </AlertDialogProvider>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </div>
-                    </div>
-                  </div>
-                  <div>
-                    <div className="relative ml-1 block py-0.5 md:block">
-                      <div className="flex items-end">
-                        <div className="flex items-center gap-x-1.5 ml-auto">
-                          <SelectDemo
-                            task={task}
-                            subtask={subtask}
-                            date={date}
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </CollapsibleContent>
-      </Collapsible>
-
-      {/*<pre className="text-xs">{JSON.stringify(todo, null, 2)}</pre>*/}
-    </div>
-  );
-};
-
-// {task && <input {...getInputProps(fields.id, { type: "hidden" })} />}
-// {task && <input {...getInputProps(fields.status, { type: "hidden" })} />}
-// {task && (
-//   <input {...getInputProps(fields.target_sessions, { type: "hidden" })} />
-// )}
-// {task && (
-//   <input
-//     {...getInputProps(fields.completed_sessions, { type: "hidden" })}
-//   />
-// )}
-// <input
-//   {...getInputProps(fields.intent, {
-//     type: "hidden",
-//   })}
-// />
-// {todos.map((todo, index) => {
-//   const totalSessionTime = todo.sessions.reduce(
-//     (total_time, session) => total_time + session.time,
-//     0,
-//   );
-//   const today = new Date();
-//   const yesterday = new Date(date.timestamp);
-//   today.setHours(0, 1, 0, 0);
-//   const todayTimestamp = today.getTime();
-//   const isYesterday = todayTimestamp < date.timestamp;
-//   const is_today = todayTimestamp === date.timestamp;
-//   return (
-//     <div
-//       key={todo.id}
-//       style={{ animationDelay: `${index * 0.1}s` }}
-//       className={cn(
-//         "relative animate-roll-reveal [animation-fill-mode:backwards]  inset-0 w-full transition-all ease-in-out duration-500",
-//       )}
-//     >
-//       <Collapsible defaultOpen={true} className="">
-//         <div
-//           className={cn(
-//             "relative flex items-start overflow-hidden dark:bg-gradient-to-l dark:from-gray-950/80 dark:to-gray-800 py-2 mb-3 bg-gray-50 rounded-lg",
-//             active_task && todo.status !== "progress"
-//               ? "bg-white/40 text-muted-foreground opacity-80"
-//               : active_task && todo.status === "progress"
-//                 ? "opacity-100"
-//                 : todo.status === "done"
-//                   ? ""
-//                   : "",
-//           )}
-//         >
-//           <div
-//             className="-mt-0 h-full cursor-pointer px-1 py-1 text-gray-300 hover:text-gray-800 dark:text-gray-600 dark:hover:text-gray-400"
-//             style={{ touchAction: "none" }}
-//             draggable="true"
-//           >
-//             <GripVertical className="h-5 w-5" />
-//           </div>
-//           <div className="mr-1">
-//             {todo.status === "done" && (
-//               <CircleCheckBig className="absolute -top-5 -right-5 w-28 h-28 text-green-500 rounded-full opacity-40" />
-//             )}
-//             <div className="flex gap-2 pl-0 pt-1">
-//               {is_today ? (
-//                 <React.Fragment>
-//                   {todo.status === "done" ? (
-//                     <CircleCheckBig className="w-6 h-6 text-green-500 rounded-full" />
-//                   ) : todo.start_at ? (
-//                     <button
-//                       onClick={() =>
-//                         submit(
-//                           {
-//                             intent: "update-status-task",
-//                             id: todo.id,
-//                             status: "pause",
-//                           },
-//                           { action: routeAction, method: "POST" },
-//                         )
-//                       }
-//                       className={cn(
-//                         "flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-yellow-500  text-white",
-//                         active_task &&
-//                           "animate-roll-reveal [animation-fill-mode:backwards]",
-//                       )}
-//                     >
-//                       <Pause className="h-5 w-5" />
-//                     </button>
-//                   ) : (
-//                     <button
-//                       type="button"
-//                       onClick={() =>
-//                         submit(
-//                           {
-//                             intent: "update-status-task",
-//                             id: todo.id,
-//                             status: "progress",
-//                           },
-//                           { action: routeAction, method: "POST" },
-//                         )
-//                       }
-//                       className={cn(
-//                         "flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-blue-500 pl-0.5 text-white",
-//                         active_task &&
-//                           "animate-roll-reveal [animation-fill-mode:backwards]",
-//                       )}
-//                     >
-//                       <Play className="h-5 w-5" />
-//                     </button>
-//                   )}
-//                 </React.Fragment>
-//               ) : (
-//                 <button className="h-6 w-6 shrink-0 items-center justify-center rounded-full hover:bg-gray-200 dark:hover:bg-gray-500 ">
-//                   <ArrowRight />
-//                 </button>
-//               )}
-//             </div>
-//           </div>
-//           <div className="w-full">
-//             <div className="relative flex w-full items-start">
-//               <AutosizeTextarea
-//                 onChange={(e) =>
-//                   handleChange({ title: e.target.value }, todo.id)
-//                 }
-//                 style={{ resize: "none" }}
-//                 className="w-full bg-transparent p-1 outline-none text-md border-none focus-visible:ring-offset-0 focus-visible:ring-0 outline-none"
-//                 defaultValue={todo.title}
-//                 maxHeight={800}
-//                 placeholder="Untitled"
-//                 autoComplete="off"
-//               />
-//               <div className="ml-auto flex items-center gap-1 mr-1">
-//                 <CollapsibleTrigger data-state="open">
-//                   <ChevronsUpDown className="w-5 h-5  data-[state=open]:hidden block" />
-//                   <X className="w-5 h-5 data-[state=open]:block hidden" />
-//                   <span className="sr-only">Toggle</span>
-//                 </CollapsibleTrigger>
-//                 <DropdownMenu>
-//                   <DropdownMenuTrigger asChild>
-//                     <Button size="sm" variant="link">
-//                       <EllipsisVertical className="w-5 h-5 " />
-//                     </Button>
-//                   </DropdownMenuTrigger>
-//                   <DropdownMenuContent align="end">
-//                     <Link to={`/daily/${daily.id}?day=${date.timestamp}`}>
-//                       <DropdownMenuItem>
-//                         <PencilLine className="w-5 h-5 mr-2" />
-//                         Edit
-//                       </DropdownMenuItem>
-//                     </Link>
-//                     {todo.status !== "done" && (
-//                       <DropdownMenuItem
-//                         onClick={() =>
-//                           submit(
-//                             {
-//                               intent: "update-status-task",
-//                               id: todo.id,
-//                               status: "done",
-//                             },
-//                             { action: routeAction, method: "POST" },
-//                           )
-//                         }
-//                       >
-//                         <CircleCheckBig className="w-5 h-5 mr-2" />
-//                         Mark as done
-//                       </DropdownMenuItem>
-//                     )}
-//                     <AlertDialog>
-//                       <DropdownMenuItem className="p-0">
-//                         <AlertDialogTrigger
-//                           className="flex w-full h-full  px-2 py-1.5"
-//                           onClick={(e) => e.stopPropagation()}
-//                         >
-//                           <Trash2 className="w-5 h-5 mr-2" />
-//                           Delete
-//                         </AlertDialogTrigger>
-//                       </DropdownMenuItem>
-//                       <AlertDialogContent
-//                         onClick={(e) => e.stopPropagation()}
-//                       >
-//                         <AlertDialogHeader>
-//                           <AlertDialogTitle>
-//                             Are you absolutely sure?
-//                           </AlertDialogTitle>
-//                           <AlertDialogDescription>
-//                             This action cannot be undone. This will
-//                             permanently delete your{" "}
-//                             <span className="font-medium">1</span>
-//                             task from our database.
-//                           </AlertDialogDescription>
-//                         </AlertDialogHeader>
-//                         <AlertDialogFooter>
-//                           <AlertDialogCancel>Cancel</AlertDialogCancel>
-//                           <AlertDialogAction
-//                             className={cn(
-//                               buttonVariants({
-//                                 variant: "destructive",
-//                               }),
-//                             )}
-//                             onClick={(e) => {
-//                               e.preventDefault();
-//                               submit(
-//                                 {
-//                                   intent: "delete-task",
-//                                   ids: JSON.stringify([todo.id]),
-//                                 },
-//                                 {
-//                                   action: routeAction,
-//                                   method: "Delete",
-//                                 },
-//                               );
-//                             }}
-//                           >
-//                             {navigation.state !== "idle" && (
-//                               <Spinner className="h-5 w-5 text-white mr-1.5" />
-//                             )}{" "}
-//                             Delete
-//                           </AlertDialogAction>
-//                         </AlertDialogFooter>
-//                       </AlertDialogContent>
-//                     </AlertDialog>
-//                   </DropdownMenuContent>
-//                 </DropdownMenu>
-//               </div>
-//             </div>
-//             <div className="group">
-//               <div className="relative ml-1 block py-0.5 md:block">
-//                 <div className="flex items-end">
-//                   <div>
-//                     {/*<div className="absolute flex items-center justify-start gap-1 overflow-hidden">
-//                     <button
-//                       type="button"
-//                       className="h-3 w-3 shrink-0 cursor-pointer rounded-full bg-gray-400"
-//                     />
-//                     <button
-//                       type="button"
-//                       className="h-3 w-3 shrink-0 cursor-pointer rounded-full bg-gray-400"
-//                     />
-//                   </div>*/}
-//                     <div className="overflow-hidden items-center justify-start gap-1 md:flex">
-//                       {new Array(16).fill(null).map((_, index) => (
-//                         <button
-//                           onClick={() => {
-//                             submit(
-//                               {
-//                                 intent: "update-target-task-session",
-//                                 id: todo.id,
-//                                 target_sessions: index + 1,
-//                               },
-//                               { action: routeAction, method: "POST" },
-//                             );
-//                           }}
-//                           key={index} // Gunakan key untuk identifikasi unik
-//                           type="button"
-//                           style={{ animationDelay: `${index * 0.03}s` }}
-//                           className={cn(
-//                             "h-3 w-3 shrink-0 cursor-pointer rounded-full ",
-//                             todo?.sessions?.length >= index + 1
-//                               ? "bg-green-400"
-//                               : todo?.target_sessions >= index + 1
-//                                 ? "bg-gray-400"
-//                                 : "bg-gray-200 hidden group-hover:block  transition-all duration-300 animate-roll-reveal [animation-fill-mode:backwards] ",
-//                           )}
-//                         />
-//                       ))}
-//                       <button
-//                         style={{ animationDelay: `${16 * 0.03}s` }}
-//                         onClick={() => {
-//                           submit(
-//                             {
-//                               intent: "update-target-task-session",
-//                               id: todo.id,
-//                               target_sessions: 0,
-//                             },
-//                             { action: routeAction, method: "POST" },
-//                           );
-//                         }}
-//                         className="h-3 w-3 shrink-0 cursor-pointer rounded-full bg-red-400 text-white flex items-center justify-center hidden group-hover:flex  animate-roll-reveal [animation-fill-mode:backwards] "
-//                       >
-//                         <X />
-//                       </button>
-//                     </div>
-//                     <div className="absolute left-0 top-0 flex items-center gap-1 py-0.5" />
-//                     <div className="mt-2 inline-block rounded p-1 text-sm text-black dark:text-white">
-//                       <div
-//                         className={todo?.start_at ? "todo-progress" : ""}
-//                       >
-//                         {new Date(totalSessionTime)
-//                           .toISOString()
-//                           .substr(11, 8)}
-//                       </div>
-//                     </div>
-//                   </div>
-//                   <div className="ml-auto px-2 pb-0.5">
-//                     <Badge>{todo.category}</Badge>
-//                   </div>
-//                 </div>
-//                 <div className="flex">
-//                   <div className="hidden">
-//                     <button className="flex items-center gap-1 rounded bg-gray-100 px-1.5 py-0.5 text-xs hover:bg-gray-200 dark:bg-gray-600 dark:hover:bg-gray-500 ">
-//                       Move to today <ArrowRight className="w-4 h-4" />
-//                     </button>
-//                   </div>
-//                 </div>
-//               </div>
-//             </div>
-//           </div>
-//         </div>
-//         <CollapsibleContent className="data-[state=open]:animate-roll-reveal data-[state=closed]:animate-roll-reveal space-y-2 text-text font-base mt-2">
-//           {todo?.sub_tasks?.map((subtask) => (
-//             <div
-//               key={subtask.id}
-//               className={cn(
-//                 "ml-5 relative flex items-start overflow-hidden dark:bg-gradient-to-l dark:from-gray-950/80 dark:to-gray-800 bg-gray-50 rounded-lg py-2 mb-3",
-//                 active_task && todo.status !== "progress"
-//                   ? "bg-white/40 text-muted-foreground opacity-80"
-//                   : active_task && todo.status === "progress"
-//                     ? "opacity-100"
-//                     : todo.status === "done"
-//                       ? ""
-//                       : "",
-//               )}
-//             >
-//               <div
-//                 className="-mt-0 h-full cursor-pointer px-1 py-1 text-gray-300 hover:text-gray-800 dark:text-gray-600 dark:hover:text-gray-400"
-//                 style={{ touchAction: "none" }}
-//                 draggable="true"
-//               >
-//                 <GripVertical className="h-5 w-5" />
-//               </div>
-//               <div className="">
-//                 <div className="flex gap-2 pl-0 pt-1 mr-2 mt-1">
-//                   <Checkbox defaultChecked={subtask.checked} />
-//                 </div>
-//               </div>
-//               <div className="w-full">
-//                 <div className="relative flex w-full items-center">
-//                   <AutosizeTextarea
-//                     onChange={(e) =>
-//                       handleChange(
-//                         { id: subtask.id, title: e.target.value },
-//                         todo.id,
-//                       )
-//                     }
-//                     style={{ resize: "none" }}
-//                     className="w-full bg-transparent p-1 outline-none text-md border-none focus-visible:ring-offset-0 focus-visible:ring-0 outline-none"
-//                     defaultValue={subtask.title}
-//                     maxHeight={800}
-//                     placeholder="Untitled"
-//                     autoComplete="off"
-//                   />
-//                   <div className="ml-auto flex items-center">
-//                     <div className="">
-//                       <Button size="sm" variant="link">
-//                         <EllipsisVertical className="w-5 h-5 " />
-//                         <span className="sr-only">Open menu</span>
-//                       </Button>
-//                     </div>
-//                   </div>
-//                 </div>
-//                 <div>
-//                   <div className="relative ml-1 block py-0.5 md:block">
-//                     <div className="flex items-end">
-//                       <div className="ml-auto px-2">
-//                         <button
-//                           type="button"
-//                           aria-haspopup="dialog"
-//                           aria-expanded="false"
-//                           aria-controls="radix-:r1jd:"
-//                           data-state="closed"
-//                         >
-//                           <div className="h-4 w-4 rounded bg-gray-200" />
-//                         </button>
-//                       </div>
-//                     </div>
-//                   </div>
-//                 </div>
-//               </div>
-//             </div>
-//           ))}
-//         </CollapsibleContent>
-//       </Collapsible>
-//
-//       <pre className="text-xs">{JSON.stringify(todo, null, 2)}</pre>
-//     </div>
-//   );
-// })}
-
-interface HeartCheckboxProps {
-  disabled?: boolean;
-  defaultChecked?: boolean;
-  id: string;
-  label: string;
-}
-
-const HeartCheckbox = (props: HeartCheckboxProps) => (
-  <div className="w-full flex gap-2">
-    <input
-      className="peer relative appearance-none shrink-0 w-4 h-4 mt-1"
-      type="checkbox"
-      {...props}
-    />
-    <svg
-      className="absolute w-4 h-4 pointer-events-none stroke-white fill-none peer-checked:!fill-red-500 mt-1"
-      xmlns="http://www.w3.org/2000/svg"
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
-    </svg>
-    <label htmlFor={props.id}>{props.label}</label>
-  </div>
-);
-
-const HiddenFields = ({ data }) => {
-  return (
-    <React.Fragment>
-      {Object.entries(data).map(([name, value]) => (
-        <input
-          id={`inputHidden${name}`}
-          key={name}
-          type="hidden"
-          name={name}
-          defaultValue={value}
-        />
-      ))}
-    </React.Fragment>
-  );
-};
 
 import { startOfYear, endOfYear, eachMonthOfInterval } from "date-fns";
 
@@ -3658,7 +2529,107 @@ import {
 } from "@/components/ui/select";
 
 function StatusDot({ color }: { color?: string }) {
-  return <Squircle fill={color} color={color} />;
+  if (color) return <Squircle fill={color} color={color} />;
+
+  const gradientId = "gradient1";
+
+  return (
+    <svg
+      width="24"
+      height="24"
+      viewBox="0 0 40 40"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      {/* Definisikan Gradien */}
+      <defs>
+        <linearGradient id={gradientId} x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop
+            offset="0%"
+            style={{ stopColor: color || "#FFF", stopOpacity: 1 }}
+          />
+          <stop offset="100%" style={{ stopColor: "#000", stopOpacity: 1 }} />
+        </linearGradient>
+      </defs>
+
+      {/* Gambar objek yang menggunakan gradien */}
+      <circle cx="20" cy="20" r="18" fill={`url(#${gradientId})`} />
+    </svg>
+  );
+}
+
+function SelectFilter({ value, setValue, tasks }) {
+  const taskCategories = [
+    { label: "Urgent", color: "#e11d48" },
+    { label: "High Priority", color: "#f97316" },
+    { label: "Medium Priority", color: "#f59e0b" },
+    { label: "Low Priority", color: "#6ee7b7" },
+    { label: "Personal", color: "#4ade80" },
+    { label: "Work", color: "#0284c7" },
+    { label: "Important Meetings", color: "#2563eb" },
+    { label: "Research", color: "#4f46e5" },
+    { label: "Creative", color: "#7c3aed" },
+    { label: "Review", color: "#9d4edd" },
+    { label: "Reports", color: "#c026d3" },
+    { label: "Follow-up", color: "#d946ef" },
+    { label: "General", color: "#9ca3af" },
+    { label: "Team Collaboration", color: "#f472b6" },
+    { label: "Client", color: "#fb923c" },
+    { label: "Training", color: "#fbbf24" },
+    { label: "Deadline", color: "#a3e635" },
+    { label: "Admin", color: "#38bdf8" },
+    { label: "Development", color: "#9333ea" },
+    { label: "Miscellaneous", color: "#1e3a8a" },
+  ];
+  // Menggabungkan colorCount dengan taskCategories
+
+  const colorCount = tasks.reduce((acc, task) => {
+    const color = task.category?.color;
+    if (color) {
+      acc[color] = (acc[color] || 0) + 1; // Menambahkan count untuk warna yang sama
+    }
+    return acc;
+  }, {});
+  const mergedCategories = taskCategories
+    .map((category) => {
+      const count = colorCount[category.color]; // Ambil count berdasarkan warna
+      if (count) {
+        return { ...category, count }; // Menambahkan count ke kategori jika ada
+      }
+      return null; // Jika count 0, kembalikan null
+    })
+    .filter(Boolean); // Menghapus semua kategori yang bernilai null (yang tidak memiliki count)
+
+  return (
+    <div className="flex items-end w-full justify-end mb-2">
+      <Select value={value} onValueChange={setValue}>
+        <SelectTrigger className="max-w-[150px] p-0 flex gap-x-1 items-center border-none focus:ring-0 shadow-none w-fit p-0 h-6 text-muted-foreground">
+          <SelectValue placeholder="Filter Category" />
+          <Filter className="w-4 h-4 flex-none" />
+        </SelectTrigger>
+        <SelectContent className="[&_*[role=option]>span>svg]:shrink-0 [&_*[role=option]>span>svg]:text-muted-foreground/80 [&_*[role=option]>span]:end-2 [&_*[role=option]>span]:start-auto [&_*[role=option]>span]:flex [&_*[role=option]>span]:items-center [&_*[role=option]>span]:gap-2 [&_*[role=option]]:pe-8 [&_*[role=option]]:ps-2">
+          <SelectItem value="all">
+            <span className="flex items-center gap-1 mr-2">
+              <StatusDot />
+              <span className="truncate">
+                All Category{" "}
+                {tasks.length > 0 && <span>( {tasks.length} )</span>}
+              </span>
+            </span>
+          </SelectItem>
+          {mergedCategories.map((item, index) => (
+            <SelectItem key={index} value={item.color}>
+              <span className="flex items-center gap-1 mr-2">
+                <StatusDot color={item.color} />
+                <span className="truncate">
+                  {item.label} ( {item.count} )
+                </span>
+              </span>
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </div>
+  );
 }
 
 function SelectDemo({ task, subtask, date }: { task: Task }) {
@@ -3862,291 +2833,47 @@ import {
   DndContext,
   type DragEndEvent,
   type DragOverEvent,
-  DragOverlay,
   type DragStartEvent,
-  useSensor,
-  useSensors,
-  KeyboardSensor,
-  Announcements,
-  UniqueIdentifier,
-  TouchSensor,
-  MouseSensor,
 } from "@dnd-kit/core";
 import { SortableContext, arrayMove } from "@dnd-kit/sortable";
 
-const defaultCols = [
-  {
-    id: "todo" as const,
-    title: "Todo",
-  },
-  {
-    id: "in-progress" as const,
-    title: "In progress",
-  },
-  {
-    id: "done" as const,
-    title: "Done",
-  },
-] satisfies Column[];
-
-export type ColumnId = (typeof defaultCols)[number]["id"];
-
-const initialTasks: Task[] = [
-  {
-    id: "task1",
-    columnId: "done",
-    title: "Project initiation and planning",
-  },
-  {
-    id: "task2",
-    columnId: "done",
-    title: "Gather requirements from stakeholders",
-  },
-  {
-    id: "task3",
-    columnId: "done",
-    title: "Create wireframes and mockups",
-  },
-  {
-    id: "task4",
-    columnId: "in-progress",
-    title: "Develop homepage layout",
-  },
-  {
-    id: "task5",
-    columnId: "in-progress",
-    title: "Design color scheme and typography",
-  },
-  {
-    id: "task6",
-    columnId: "todo",
-    title: "Implement user authentication",
-  },
-  {
-    id: "task7",
-    columnId: "todo",
-    title: "Build contact us page",
-  },
-  {
-    id: "task8",
-    columnId: "todo",
-    title: "Create product catalog",
-  },
-  {
-    id: "task9",
-    columnId: "todo",
-    title: "Develop about us page",
-  },
-  {
-    id: "task10",
-    columnId: "todo",
-    title: "Optimize website for mobile devices",
-  },
-  {
-    id: "task11",
-    columnId: "todo",
-    title: "Integrate payment gateway",
-  },
-  {
-    id: "task12",
-    columnId: "todo",
-    title: "Perform testing and bug fixing",
-  },
-  {
-    id: "task13",
-    columnId: "todo",
-    title: "Launch website and deploy to server",
-  },
-];
-
-function useLocalStorageState(key, initialValue) {
-  // Ambil data dari local storage saat komponen dimuat pertama kali
-  const [state, setState] = useState(() => {
-    const storedValue = localStorage.getItem(key);
-    return storedValue ? JSON.parse(storedValue) : initialValue;
-  });
-
-  // Simpan state ke local storage setiap kali berubah
-  React.useEffect(() => {
-    localStorage.setItem(key, JSON.stringify(state));
-  }, [key, state]);
-
-  return [state, setState];
-}
-
-function KanbanBoard({ tasks, date, streak_data, active_task }) {
+function KanbanBoard({ tasks, date, active_task }) {
   const dispatch = useAppDispatch();
-  const [columns, setColumns] = useState<Column[]>(defaultCols);
-  const pickedUpTaskColumn = useRef<ColumnId | null>(null);
-  const columnsId = useMemo(() => columns.map((col) => col.id), [columns]);
-
-  // const [tasks, setTasks] = useState<Task[]>(_tasks);
-
-  const [activeTask, setActiveTask] = useState<Task | null>(null);
-
-  const sensors = useSensors(
-    useSensor(MouseSensor),
-    useSensor(TouchSensor),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: coordinateGetter,
-    }),
-  );
-
-  function getDraggingTaskData(taskId: UniqueIdentifier, columnId: ColumnId) {
-    const tasksInColumn = tasks.filter((task) => task.columnId === columnId);
-    const taskPosition = tasksInColumn.findIndex((task) => task.id === taskId);
-    const column = columns.find((col) => col.id === columnId);
-    return {
-      tasksInColumn,
-      taskPosition,
-      column,
-    };
-  }
-
-  const announcements: Announcements = {
-    onDragStart({ active }) {
-      if (!hasDraggableData(active)) return;
-      if (active.data.current?.type === "Column") {
-        const startColumnIdx = columnsId.findIndex((id) => id === active.id);
-        const startColumn = columns[startColumnIdx];
-        return `Picked up Column ${startColumn?.title} at position: ${
-          startColumnIdx + 1
-        } of ${columnsId.length}`;
-      } else if (active.data.current?.type === "Task") {
-        pickedUpTaskColumn.current = active.data.current.task.columnId;
-        const { tasksInColumn, taskPosition, column } = getDraggingTaskData(
-          active.id,
-          pickedUpTaskColumn.current,
-        );
-        return `Picked up Task ${
-          active.data.current.task.content
-        } at position: ${taskPosition + 1} of ${
-          tasksInColumn.length
-        } in column ${column?.title}`;
-      }
-    },
-    onDragOver({ active, over }) {
-      if (!hasDraggableData(active) || !hasDraggableData(over)) return;
-
-      if (
-        active.data.current?.type === "Column" &&
-        over.data.current?.type === "Column"
-      ) {
-        const overColumnIdx = columnsId.findIndex((id) => id === over.id);
-        return `Column ${active.data.current.column.title} was moved over ${
-          over.data.current.column.title
-        } at position ${overColumnIdx + 1} of ${columnsId.length}`;
-      } else if (
-        active.data.current?.type === "Task" &&
-        over.data.current?.type === "Task"
-      ) {
-        const { tasksInColumn, taskPosition, column } = getDraggingTaskData(
-          over.id,
-          over.data.current.task.columnId,
-        );
-        if (over.data.current.task.columnId !== pickedUpTaskColumn.current) {
-          return `Task ${
-            active.data.current.task.content
-          } was moved over column ${column?.title} in position ${
-            taskPosition + 1
-          } of ${tasksInColumn.length}`;
-        }
-        return `Task was moved over position ${taskPosition + 1} of ${
-          tasksInColumn.length
-        } in column ${column?.title}`;
-      }
-    },
-    onDragEnd({ active, over }) {
-      if (!hasDraggableData(active) || !hasDraggableData(over)) {
-        pickedUpTaskColumn.current = null;
-        return;
-      }
-      if (
-        active.data.current?.type === "Column" &&
-        over.data.current?.type === "Column"
-      ) {
-        const overColumnPosition = columnsId.findIndex((id) => id === over.id);
-
-        return `Column ${
-          active.data.current.column.title
-        } was dropped into position ${overColumnPosition + 1} of ${
-          columnsId.length
-        }`;
-      } else if (
-        active.data.current?.type === "Task" &&
-        over.data.current?.type === "Task"
-      ) {
-        const { tasksInColumn, taskPosition, column } = getDraggingTaskData(
-          over.id,
-          over.data.current.task.columnId,
-        );
-        if (over.data.current.task.columnId !== pickedUpTaskColumn.current) {
-          return `Task was dropped into column ${column?.title} in position ${
-            taskPosition + 1
-          } of ${tasksInColumn.length}`;
-        }
-        return `Task was dropped into position ${taskPosition + 1} of ${
-          tasksInColumn.length
-        } in column ${column?.title}`;
-      }
-      pickedUpTaskColumn.current = null;
-    },
-    onDragCancel({ active }) {
-      pickedUpTaskColumn.current = null;
-      if (!hasDraggableData(active)) return;
-      return `Dragging ${active.data.current?.type} cancelled.`;
-    },
-  };
-
+  const [value, setValue] = useState("all");
+  const filteredTasks =
+    value !== "all" ? tasks.filter((d) => d.category?.color === value) : tasks;
   return (
-    <DndContext
-      accessibility={{
-        announcements,
-      }}
-      sensors={sensors}
-      onDragStart={onDragStart}
-      onDragEnd={onDragEnd}
-      onDragOver={onDragOver}
-    >
-      <SortableContext items={columnsId}>
-        <BoardColumn tasks={tasks} date={date} active_task={active_task} />
-      </SortableContext>
-    </DndContext>
+    <React.Fragment>
+      <SelectFilter value={value} setValue={setValue} tasks={tasks} />
+      {filteredTasks.length > 0 ? (
+        <DndContext onDragStart={onDragStart} onDragEnd={onDragEnd}>
+          <BoardColumn
+            tasks={filteredTasks}
+            date={date}
+            active_task={active_task}
+          />
+        </DndContext>
+      ) : (
+        <div className="">
+          <p className="text-center text-gray-600 leading-relaxed flex gap-x-2 items-center justify-center">
+            {value !== "all" && (
+              <span className="flex gap-x-2">
+                <StatusDot color={value} />
+              </span>
+            )}{" "}
+            No {date.is_tomorrow && " planing "} task in {date.q}
+          </p>
+        </div>
+      )}
+    </React.Fragment>
   );
 
   function onDragStart(event: DragStartEvent) {
     if (!hasDraggableData(event.active)) return;
-    const data = event.active.data.current;
-
-    if (data?.type === "Task") {
-      setActiveTask(data.task);
-      return;
-    }
+    // const data = event.active.data.current;
   }
 
   function onDragEnd(event: DragEndEvent) {
-    setActiveTask(null);
-
-    const { active, over } = event;
-    if (!over) return;
-
-    const activeId = active.id;
-    const overId = over.id;
-
-    if (!hasDraggableData(active)) return;
-
-    if (activeId === overId) return;
-
-    setColumns((columns) => {
-      const activeColumnIndex = columns.findIndex((col) => col.id === activeId);
-
-      const overColumnIndex = columns.findIndex((col) => col.id === overId);
-
-      return arrayMove(columns, activeColumnIndex, overColumnIndex);
-    });
-  }
-
-  function onDragOver(event: DragOverEvent) {
     const { active, over } = event;
     if (!over) return;
 
@@ -4181,19 +2908,67 @@ function KanbanBoard({ tasks, date, streak_data, active_task }) {
   }
 }
 
+function KanbanBoardSubTasks({ sub_tasks, task, date, active_task }) {
+  const dispatch = useAppDispatch();
+
+  return (
+    <DndContext onDragStart={onDragStart} onDragEnd={onDragEnd}>
+      <BoardColumnSubTasks
+        sub_tasks={sub_tasks}
+        date={date}
+        task={task}
+        active_task={active_task}
+      />
+    </DndContext>
+  );
+
+  function onDragStart(event: DragStartEvent) {
+    if (!hasDraggableData(event.active)) return;
+    // const data = event.active.data.current;
+  }
+
+  function onDragEnd(event: DragOverEvent) {
+    const { active, over } = event;
+    if (!over) return;
+
+    const activeId = active.id;
+    const overId = over.id;
+
+    if (activeId === overId) return;
+
+    if (!hasDraggableData(active) || !hasDraggableData(over)) return;
+
+    const activeData = active.data.current;
+    const overData = over.data.current;
+
+    const isActiveATask = activeData?.type === "Task";
+    const isOverATask = overData?.type === "Task";
+
+    if (!isActiveATask) return;
+
+    // Im dropping a Task over another Task
+    if (isActiveATask && isOverATask) {
+      function setter(sub_tasks: Task[]) {
+        const activeIndex = sub_tasks.findIndex((t) => t.id === activeId);
+        const overIndex = sub_tasks.findIndex((t) => t.id === overId);
+
+        return arrayMove(sub_tasks, activeIndex, overIndex);
+      }
+      const updatedTasks = setter(sub_tasks);
+      dispatch(
+        updateSubTasksColumn({
+          id: task.id,
+          key: date.timestamp,
+          updated_sub_task: updatedTasks,
+        }),
+      );
+    }
+  }
+}
+
 import { useSortable } from "@dnd-kit/sortable";
-import { useDndContext } from "@dnd-kit/core";
 import { CSS } from "@dnd-kit/utilities";
 import { cva } from "class-variance-authority";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { ScrollBar } from "@/components/ui/scroll-area";
-
-export type ColumnType = "Column";
-
-export interface ColumnDragData {
-  type: ColumnType;
-  column: Column;
-}
 
 interface BoardColumnProps {
   column: Column;
@@ -4201,26 +2976,18 @@ interface BoardColumnProps {
   isOverlay?: boolean;
 }
 
-function BoardColumn({
-  column,
-  tasks,
-  date,
-  active_task,
-  isOverlay,
-}: BoardColumnProps) {
+function BoardColumn({ tasks, date, active_task }: BoardColumnProps) {
   const tasksIds = useMemo(() => {
     return tasks.map((task) => task.id);
   }, [tasks]);
 
   return (
     <SortableContext items={tasksIds}>
-      {tasks.map((task, index) => (
+      {tasks.map((task) => (
         <TaskCard
           key={task.id}
-          index={index}
           date={date}
           active_task={active_task}
-          key={task.id}
           task={task}
         />
       ))}
@@ -4228,11 +2995,31 @@ function BoardColumn({
   );
 }
 
-// export interface Task {
-//   id: UniqueIdentifier;
-//   columnId: ColumnId;
-//   content: string;
-// }
+function BoardColumnSubTasks({
+  sub_tasks,
+  date,
+  task,
+  active_task,
+}: BoardColumnProps) {
+  const tasksIds = useMemo(() => {
+    return sub_tasks.length > 0 && sub_tasks.map((sub_task) => sub_task.id);
+  }, [sub_tasks]);
+
+  return (
+    <SortableContext items={tasksIds}>
+      {sub_tasks.map((sub_task, index) => (
+        <SubTaskCard
+          index={index}
+          key={sub_task.id}
+          date={date}
+          active_task={active_task}
+          subtask={sub_task}
+          task={task}
+        />
+      ))}
+    </SortableContext>
+  );
+}
 
 interface TaskCardProps {
   task: Task;
@@ -4246,13 +3033,7 @@ export interface TaskDragData {
   task: Task;
 }
 
-function TaskCard({
-  index,
-  date,
-  active_task,
-  task,
-  isOverlay,
-}: TaskCardProps) {
+function TaskCard({ date, active_task, task, isOverlay }: TaskCardProps) {
   const {
     setNodeRef,
     attributes,
@@ -4279,7 +3060,7 @@ function TaskCard({
   const variants = cva("", {
     variants: {
       dragging: {
-        over: "",
+        over: "opacity-30",
         overlay: "",
       },
     },
@@ -4299,18 +3080,21 @@ function TaskCard({
       ref={setNodeRef}
       style={style}
       className={cn(
-        "w-full mb-2",
+        "w-full mb-2 animate-roll-reveal [animation-fill-mode:backwards]",
         variants({
           dragging: isOverlay ? "overlay" : isDragging ? "over" : undefined,
         }),
       )}
     >
-      <Collapsible defaultOpen={false}>
+      <Collapsible
+        {...(active_task ? { open: active_task.id === task.id } : {})}
+        defaultOpen={false}
+      >
         <div
           className={cn(
             "p-2 relative flex items-start overflow-hidden dark:bg-gradient-to-l dark:from-gray-950/80 dark:to-gray-800 py-2 mb-2 bg-gray-50 rounded-lg shadow-md",
             active_task && todo.status !== "progress"
-              ? "bg-white/40 text-muted-foreground opacity-80"
+              ? "bg-white text-muted-foreground opacity-60"
               : active_task && todo.status === "progress"
                 ? "bg-orange-100 dark:bg-orange-400 bg-gradient-to-l from-gray-50 dark:from-orange-950 opacity-100"
                 : todo.status === "done"
@@ -4323,10 +3107,10 @@ function TaskCard({
               variant={"link"}
               {...attributes}
               {...listeners}
-              className="text-secondary-foreground/50  h-auto cursor-grab absolute top-1/2 transform -translate-y-1/2 left-2  z-20 h-5 w-5 mt-1"
+              className="text-secondary-foreground/50 h-auto cursor-grab absolute top-1/2 transform -translate-y-1/2 left-2  z-20 h-5 w-5 mt-1"
             >
               <span className="sr-only">Move task</span>
-              <GripVertical className="" />
+              <GripVertical />
             </Button>
           </div>
           <div className="mr-1">
@@ -4393,7 +3177,17 @@ function TaskCard({
                   )}
                 </React.Fragment>
               ) : (
-                <button className="h-6 w-6 shrink-0 items-center justify-center rounded-full hover:bg-gray-200 dark:hover:bg-gray-500 ">
+                <button
+                  onClick={() => {
+                    dispatch(copyTask({ id: task.id, key: date.timestamp }));
+
+                    toast({
+                      title: "Added in today",
+                      description: `The task has been successfully added in today.`,
+                    });
+                  }}
+                  className="h-6 w-6 shrink-0 items-center justify-center rounded-full hover:bg-gray-200 dark:hover:bg-gray-500 "
+                >
                   <ArrowRight />
                 </button>
               )}
@@ -4424,16 +3218,18 @@ function TaskCard({
                 autoComplete="off"
               />
               <div className="ml-auto flex items-center gap-2 pr-2 pt-2">
-                <CollapsibleTrigger>
-                  <Badge
-                    className="flex items-center gap-x-1"
-                    variant="success"
-                  >
-                    <ChevronsUpDown className="w-4 h-4" />
-                    <span>{todo.sub_tasks.length}</span>
-                  </Badge>
-                  <span className="sr-only">Toggle</span>
-                </CollapsibleTrigger>
+                {todo.sub_tasks.length > 0 && (
+                  <CollapsibleTrigger asChild>
+                    <Badge
+                      className="flex flex-1 items-center gap-1 justify-between text-sm font-medium transition-all text-left [&[data-state=close]>svg.chev]:block [&[data-state=open]>svg.cross]:block [&[data-state=open]>svg.chev]:hidden"
+                      variant="success"
+                    >
+                      <ChevronsUpDown className="chev h-4 w-4 shrink-0 transition-all duration-200" />
+                      <X className="cross hidden h-4 w-4 shrink-0 transition-all duration-200" />
+                      <span>{todo.sub_tasks.length}</span>
+                    </Badge>
+                  </CollapsibleTrigger>
+                )}
                 <DropdownMenu>
                   <DropdownMenuTrigger>
                     <EllipsisVertical className="w-4 h-4" />
@@ -4538,140 +3334,342 @@ function TaskCard({
                   </div>
                   <SelectDemo task={task} date={date} />
                 </div>
-                <div className="flex">
-                  <div className="hidden">
-                    <button className="flex items-center gap-1 rounded bg-gray-100 px-1.5 py-0.5 text-xs hover:bg-gray-200 dark:bg-gray-600 dark:hover:bg-gray-500 ">
+                {!is_today && (
+                  <div className="flex">
+                    <button
+                      onClick={() => {
+                        dispatch(
+                          copyTask({ id: task.id, key: date.timestamp }),
+                        );
+
+                        toast({
+                          title: "Added in today",
+                          description: `The task has been successfully added in today.`,
+                        });
+                      }}
+                      className="flex items-center gap-1 rounded bg-gray-100 px-1.5 py-0.5 text-xs hover:bg-gray-200 dark:bg-gray-600 dark:hover:bg-gray-500 "
+                    >
                       Move to today <ArrowRight className="w-4 h-4" />
                     </button>
                   </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {todo.sub_tasks.length > 0 && (
+          <div>
+            <CollapsibleContent className="data-[state=closed]:animate-accordion-up data-[state=open]:animate-accordion-down transition-all duration-500 space-y-2 text-text font-base mt-1">
+              <KanbanBoardSubTasks
+                task={task}
+                sub_tasks={todo.sub_tasks}
+                date={date}
+                active_task={active_task}
+              />
+              {/*{task.sub_tasks?.map((subtask, index) => {
+                return (
+                  <div
+                    key={index}
+                    className={cn(
+                      "ml-5 relative flex items-start overflow-hidden dark:bg-gradient-to-l dark:from-gray-950/80 dark:to-gray-800 bg-gray-50 rounded-lg py-2 mb-1.5 shadow-md",
+                      active_task && todo.status !== "progress"
+                        ? "bg-white/40 text-muted-foreground opacity-80"
+                        : active_task && todo.status === "progress"
+                          ? "bg-orange-100 dark:bg-orange-400 bg-gradient-to-l from-gray-50 dark:from-orange-950 opacity-100"
+                          : subtask.checked
+                            ? "bg-green-100 dark:bg-green-900 bg-gradient-to-l via-white dark:via-black from-green-50 dark:from-green-950 opacity-100"
+                            : "opacity-100",
+                    )}
+                  >
+                    {subtask.checked && (
+                      <CircleCheckBig className="absolute top-0 -right-4 w-28 h-28 text-green-500 dark:text-green-400 opacity-30" />
+                    )}
+                    <div
+                      className="-mt-0 h-full cursor-pointer px-1 py-1 text-gray-300 hover:text-gray-800 dark:text-gray-600 dark:hover:text-gray-400"
+                      style={{ touchAction: "none" }}
+                      draggable="true"
+                    >
+                      <GripVertical className="absolute top-1/2 transform -translate-y-1/2 left-2  z-20 h-5 w-5 mt-1" />
+                    </div>
+                    <div className="ml-1">
+                      <div className="flex gap-2 pl-0 pt-1 mr-2 mt-1">
+                        <input
+                          type="hidden"
+                          defaultValue={subtask.id}
+                          key={`sub_tasks[${index}].id`}
+                          name={`sub_tasks[${index}].id`}
+                          id={`sub_tasks[${index}].id`}
+                        />
+                        <input
+                          type="checkbox"
+                          defaultChecked={subtask.checked}
+                          onChange={(e) => {
+                            dispatch(
+                              updateSubTask({
+                                id: task.id,
+                                key: date.timestamp,
+                                sub_task_id: subtask.id,
+                                updated_sub_task: {
+                                  title: subtask.title,
+                                  checked: e.target.checked,
+                                },
+                              }),
+                            );
+                          }}
+                          className="accent-green-400 scale-150"
+                          key={`sub_tasks[${index}].checked`}
+                          name={`sub_tasks[${index}].checked`}
+                          id={`sub_tasks[${index}].checked`}
+                        />
+                      </div>
+                    </div>
+                    <div className="w-full">
+                      <div className="relative flex w-full items-start">
+                        <AutosizeTextarea
+                          defaultValue={subtask.title}
+                          key={`sub_tasks[${index}].title`} // Dinamis berdasarkan index
+                          name={`sub_tasks[${index}].title`} // Dinamis berdasarkan index
+                          id={`sub_tasks[${index}].title`} // Dinamis ber
+                          onBlur={(e) => {
+                            dispatch(
+                              updateSubTask({
+                                id: task.id,
+                                key: date.timestamp,
+                                sub_task_id: subtask.id,
+                                updated_sub_task: {
+                                  title: e.target.value,
+                                },
+                              }),
+                            );
+                          }}
+                          style={{ resize: "none" }}
+                          className="w-full bg-transparent p-1 outline-none text-md border-none focus-visible:ring-offset-0 focus-visible:ring-0 outline-none"
+                          maxHeight={800}
+                          placeholder="Untitled"
+                          autoComplete="off"
+                        />
+                        <div className="ml-auto flex items-center gap-2 pr-2 pt-2">
+                          <div className="">
+                            <DropdownMenu>
+                              <DropdownMenuTrigger>
+                                <EllipsisVertical className="w-4 h-4 " />
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <AlertDialogProvider>
+                                  <DeleteTask
+                                    task_id={task.id}
+                                    sub_task_id={subtask.id}
+                                    task_title={todo.title}
+                                    sub_task_title={subtask.title}
+                                    timestamp={date.timestamp}
+                                  />
+                                </AlertDialogProvider>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </div>
+                        </div>
+                      </div>
+                      <div>
+                        <div className="relative ml-1 block py-0.5 md:block">
+                          <div className="flex items-end">
+                            <div className="flex items-center gap-x-1.5 ml-auto">
+                              <SelectDemo
+                                task={task}
+                                subtask={subtask}
+                                date={date}
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}*/}
+            </CollapsibleContent>
+          </div>
+        )}
+      </Collapsible>
+    </div>
+  );
+}
+
+function SubTaskCard({
+  index,
+  subtask,
+  date,
+  active_task,
+  task,
+  isOverlay,
+}: TaskCardProps) {
+  const {
+    setNodeRef,
+    attributes,
+    listeners,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({
+    id: subtask?.id ?? 0,
+    data: {
+      type: "Task",
+      subtask,
+    } satisfies TaskDragData,
+    attributes: {
+      roleDescription: "Task",
+    },
+  });
+
+  const style = {
+    transition,
+    transform: CSS.Translate.toString(transform),
+  };
+
+  const variants = cva("", {
+    variants: {
+      dragging: {
+        over: "opacity-30",
+        overlay: "",
+      },
+    },
+  });
+
+  const todo = task;
+
+  const is_today = date.is_today;
+  const dispatch = useAppDispatch();
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={cn(
+        "w-full mb-2 animate-roll-reveal [animation-fill-mode:backwards]",
+        variants({
+          dragging: isOverlay ? "overlay" : isDragging ? "over" : undefined,
+        }),
+      )}
+    >
+      <div
+        className={cn(
+          "ml-5 relative flex items-start overflow-hidden dark:bg-gradient-to-l dark:from-gray-950/80 dark:to-gray-800 bg-gray-50 rounded-lg py-2 mb-1.5 shadow-md",
+          active_task && todo.status !== "progress"
+            ? "bg-white/40 text-muted-foreground opacity-80"
+            : active_task && todo.status === "progress"
+              ? "bg-orange-100 dark:bg-orange-400 bg-gradient-to-l from-gray-50 dark:from-orange-950 opacity-100"
+              : subtask.checked
+                ? "bg-green-100 dark:bg-green-900 bg-gradient-to-l via-white dark:via-black from-green-50 dark:from-green-950 opacity-100"
+                : "opacity-100",
+        )}
+      >
+        {subtask.checked && (
+          <CircleCheckBig className="absolute top-0 -right-4 w-28 h-28 text-green-500 dark:text-green-400 opacity-30" />
+        )}
+        <div
+          className="-mt-0 h-full cursor-pointer px-1 py-1 text-gray-300 hover:text-gray-800 dark:text-gray-600 dark:hover:text-gray-400"
+          style={{ touchAction: "none" }}
+          draggable="true"
+        >
+          <Button
+            variant={"link"}
+            {...attributes}
+            {...listeners}
+            className="text-secondary-foreground/50 h-auto cursor-grab absolute top-1/2 transform -translate-y-1/2 left-2  z-20 h-5 w-5 mt-1"
+          >
+            <span className="sr-only">Move task</span>
+            <GripVertical />
+          </Button>
+        </div>
+        <div className="ml-1">
+          <div className="flex gap-2 pl-0 pt-1 mr-2 mt-1">
+            <input
+              type="hidden"
+              defaultValue={subtask.id}
+              key={`sub_tasks[${index}].id`}
+              name={`sub_tasks[${index}].id`}
+              id={`sub_tasks[${index}].id`}
+            />
+            <input
+              type="checkbox"
+              defaultChecked={subtask.checked}
+              onChange={(e) => {
+                dispatch(
+                  updateSubTask({
+                    id: task.id,
+                    key: date.timestamp,
+                    sub_task_id: subtask.id,
+                    updated_sub_task: {
+                      title: subtask.title,
+                      checked: e.target.checked,
+                    },
+                  }),
+                );
+              }}
+              className="accent-green-400 scale-150"
+              key={`sub_tasks[${index}].checked`}
+              name={`sub_tasks[${index}].checked`}
+              id={`sub_tasks[${index}].checked`}
+            />
+          </div>
+        </div>
+        <div className="w-full">
+          <div className="relative flex w-full items-start">
+            <AutosizeTextarea
+              defaultValue={subtask.title}
+              key={`sub_tasks[${index}].title`} // Dinamis berdasarkan index
+              name={`sub_tasks[${index}].title`} // Dinamis berdasarkan index
+              id={`sub_tasks[${index}].title`} // Dinamis ber
+              onBlur={(e) => {
+                dispatch(
+                  updateSubTask({
+                    id: task.id,
+                    key: date.timestamp,
+                    sub_task_id: subtask.id,
+                    updated_sub_task: {
+                      title: e.target.value,
+                    },
+                  }),
+                );
+              }}
+              style={{ resize: "none" }}
+              className="w-full bg-transparent p-1 outline-none text-md border-none focus-visible:ring-offset-0 focus-visible:ring-0 outline-none"
+              maxHeight={800}
+              placeholder="Untitled"
+              autoComplete="off"
+            />
+            <div className="ml-auto flex items-center gap-2 pr-2 pt-2">
+              <div className="">
+                <DropdownMenu>
+                  <DropdownMenuTrigger>
+                    <EllipsisVertical className="w-4 h-4 " />
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <AlertDialogProvider>
+                      <DeleteTask
+                        task_id={task.id}
+                        sub_task_id={subtask.id}
+                        task_title={todo.title}
+                        sub_task_title={subtask.title}
+                        timestamp={date.timestamp}
+                      />
+                    </AlertDialogProvider>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+            </div>
+          </div>
+          <div>
+            <div className="relative ml-1 block py-0.5 md:block">
+              <div className="flex items-end">
+                <div className="flex items-center gap-x-1.5 ml-auto">
+                  <SelectDemo task={task} subtask={subtask} date={date} />
                 </div>
               </div>
             </div>
           </div>
         </div>
-        <CollapsibleContent className="CollapsibleContent space-y-2 text-text font-base mt-1">
-          {task.sub_tasks?.map((subtask, index) => {
-            return (
-              <div
-                key={index}
-                className={cn(
-                  "ml-5 relative flex items-start overflow-hidden dark:bg-gradient-to-l dark:from-gray-950/80 dark:to-gray-800 bg-gray-50 rounded-lg py-2 mb-1.5 shadow-md",
-                  active_task && todo.status !== "progress"
-                    ? "bg-white/40 text-muted-foreground opacity-80"
-                    : subtask.checked
-                      ? "bg-green-100 dark:bg-green-900 bg-gradient-to-l via-white dark:via-black from-green-50 dark:from-green-950 opacity-100"
-                      : "opacity-100",
-                )}
-              >
-                {subtask.checked && (
-                  <CircleCheckBig className="absolute top-0 -right-4 w-28 h-28 text-green-500 dark:text-green-400 opacity-30" />
-                )}
-                <div
-                  className="-mt-0 h-full cursor-pointer px-1 py-1 text-gray-300 hover:text-gray-800 dark:text-gray-600 dark:hover:text-gray-400"
-                  style={{ touchAction: "none" }}
-                  draggable="true"
-                >
-                  <GripVertical className="absolute top-1/2 transform -translate-y-1/2 left-2  z-20 h-5 w-5 mt-1" />
-                </div>
-                <div className="ml-1">
-                  <div className="flex gap-2 pl-0 pt-1 mr-2 mt-1">
-                    <input
-                      type="hidden"
-                      defaultValue={subtask.id}
-                      key={`sub_tasks[${index}].id`}
-                      name={`sub_tasks[${index}].id`}
-                      id={`sub_tasks[${index}].id`}
-                    />
-                    <input
-                      type="checkbox"
-                      defaultChecked={subtask.checked}
-                      onChange={(e) => {
-                        dispatch(
-                          updateSubTask({
-                            id: task.id,
-                            key: date.timestamp,
-                            sub_task_id: subtask.id,
-                            updated_sub_task: {
-                              title: subtask.title,
-                              checked: e.target.checked,
-                            },
-                          }),
-                        );
-                      }}
-                      className="accent-green-400 scale-150"
-                      key={`sub_tasks[${index}].checked`}
-                      name={`sub_tasks[${index}].checked`}
-                      id={`sub_tasks[${index}].checked`}
-                    />
-                  </div>
-                </div>
-                <div className="w-full">
-                  <div className="relative flex w-full items-start">
-                    <AutosizeTextarea
-                      defaultValue={subtask.title}
-                      key={`sub_tasks[${index}].title`} // Dinamis berdasarkan index
-                      name={`sub_tasks[${index}].title`} // Dinamis berdasarkan index
-                      id={`sub_tasks[${index}].title`} // Dinamis ber
-                      onBlur={(e) => {
-                        dispatch(
-                          updateSubTask({
-                            id: task.id,
-                            key: date.timestamp,
-                            sub_task_id: subtask.id,
-                            updated_sub_task: {
-                              title: e.target.value,
-                            },
-                          }),
-                        );
-                      }}
-                      style={{ resize: "none" }}
-                      className="w-full bg-transparent p-1 outline-none text-md border-none focus-visible:ring-offset-0 focus-visible:ring-0 outline-none"
-                      maxHeight={800}
-                      placeholder="Untitled"
-                      autoComplete="off"
-                    />
-                    <div className="ml-auto flex items-center gap-2 pr-2 pt-2">
-                      <div className="">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger>
-                            <EllipsisVertical className="w-4 h-4 " />
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <AlertDialogProvider>
-                              <DeleteTask
-                                task_id={task.id}
-                                sub_task_id={subtask.id}
-                                task_title={todo.title}
-                                sub_task_title={subtask.title}
-                                timestamp={date.timestamp}
-                              />
-                            </AlertDialogProvider>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </div>
-                    </div>
-                  </div>
-                  <div>
-                    <div className="relative ml-1 block py-0.5 md:block">
-                      <div className="flex items-end">
-                        <div className="flex items-center gap-x-1.5 ml-auto">
-                          <SelectDemo
-                            task={task}
-                            subtask={subtask}
-                            date={date}
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </CollapsibleContent>
-      </Collapsible>
-
-      {/*<pre className="text-xs">{JSON.stringify(todo, null, 2)}</pre>*/}
+      </div>
     </div>
   );
 }
@@ -4691,7 +3689,7 @@ function hasDraggableData<T extends Active | Over>(
 
   const data = entry.data.current;
 
-  if (data?.type === "Column" || data?.type === "Task") {
+  if (data?.type === "Task") {
     return true;
   }
 

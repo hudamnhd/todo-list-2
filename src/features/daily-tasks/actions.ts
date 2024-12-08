@@ -49,6 +49,11 @@ export interface AddTaskAction {
   payload: { key?: number };
 }
 
+export interface CopyTaskAction {
+  type: "COPY_TASK";
+  payload: { id: number; key?: number };
+}
+
 export interface AddSubTaskAction {
   type: "ADD_SUB_TASK";
   payload: { id: number; key?: number };
@@ -111,13 +116,20 @@ export interface UpdateColoumnTask {
   payload: { updated_task: Task[]; key?: number };
 }
 
+export interface UpdateColoumnSubTask {
+  type: "UPDATE_COLUMN_SUBTASK";
+  payload: { updated_sub_task: SubTask[]; id: number; key?: number };
+}
+
 export type TaskActionTypes =
   | AddTaskAction
+  | CopyTaskAction
   | AddSubTaskAction
   | DeleteSubTaskAction
   | UpdateSubTaskAction
   | UpdateSessionTaskAction
   | UpdateColoumnTask
+  | UpdateColoumnSubTask
   | UpdateTaskAction
   | SetTasksAction
   | DeleteTaskAction;
@@ -126,6 +138,16 @@ export const addTask = ({ key }: { key?: number }): AddTaskAction => {
   return {
     type: "ADD_TASK",
     payload: { key },
+  };
+};
+
+export const copyTask = ({
+  key,
+  id,
+}: { id: number; key?: number }): CopyTaskAction => {
+  return {
+    type: "COPY_TASK",
+    payload: { key, id },
   };
 };
 
@@ -225,6 +247,19 @@ export const updateTasksColumn = ({
 }: { updated_task: Task[]; key?: number }): UpdateColoumnTask => ({
   type: "UPDATE_COLUMN_TASK",
   payload: { updated_task, key },
+});
+
+export const updateSubTasksColumn = ({
+  updated_sub_task,
+  key,
+  id,
+}: {
+  updated_sub_task: SubTask[];
+  id: number;
+  key?: number;
+}): UpdateColoumnSubTask => ({
+  type: "UPDATE_COLUMN_SUBTASK",
+  payload: { updated_sub_task, id, key },
 });
 
 export const setTasks = (todos: Task[]): SetTasksAction => ({

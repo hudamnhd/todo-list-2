@@ -164,7 +164,7 @@
 }
 
 .bounce-left-right {
-  animation: bounceLeftRight 1s ease-in-out infinite;
+  animation: bounceLeftRight 1.5s ease-in-out infinite;
 }
 
 @keyframes progressFill {

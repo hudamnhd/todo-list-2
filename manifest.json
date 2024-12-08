@@ -1,7 +1,7 @@
 {
-  "name": "React PWA",
-  "short_name": "reactpwa",
-  "description": "Starter kit for modern web applications",
+  "name": "Huda Web",
+  "short_name": "hudaweb",
+  "description": "Personal website",
   "theme_color": "",
   "display": "standalone",
   "icons": [

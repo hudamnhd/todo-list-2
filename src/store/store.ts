@@ -40,8 +40,8 @@ import { rootReducer } from "./reducers";
 export const store = configureStore({
   reducer: rootReducer,
 
-  middleware: (getDefaultMiddleware) =>
-    getDefaultMiddleware().concat(daily_tasks_middleware), // Add our middleware here
+  // middleware: (getDefaultMiddleware) =>
+  //   getDefaultMiddleware().concat(daily_tasks_middleware), // Add our middleware here
 });
 
 export default store;

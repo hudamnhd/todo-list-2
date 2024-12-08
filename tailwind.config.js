@@ -62,6 +62,22 @@ export default {
         },
       },
       keyframes: {
+        "collapsible-down": {
+          from: { height: 0 },
+          to: { height: 200 },
+        },
+        "collapsible-up": {
+          from: { height: "var(--radix-collapsible-content-height)" },
+          to: { height: 0 },
+        },
+        "accordion-down": {
+          from: { height: 0 },
+          to: { height: "var(--radix-collapsible-content-height)" },
+        },
+        "accordion-up": {
+          from: { height: "var(--radix-collapsible-content-height)" },
+          to: { height: 0 },
+        },
         rocket: {
           "0%": {
             transform: "translateY(0) scale(1) rotate(0deg)",
@@ -115,11 +131,15 @@ export default {
         },
       },
       animation: {
+        "collapsible-down": "collapsible-down 0.2s ease-out",
+        "collapsible-up": "collapsible-up 0.2s ease-out",
         rocket: "rocket 3s ease-in-out infinite",
         "roll-reveal": "roll-reveal 0.4s cubic-bezier(.22,1.28,.54,.99)",
         "slide-left": "slide-left 0.3s ease-out",
         "slide-top": "slide-top 0.3s ease-out",
         "slide-bottom": "slide-bottom 0.3s ease-out",
+        "accordion-down": "accordion-down 0.5s ease-out",
+        "accordion-up": "accordion-up 0.5s ease-out",
       },
     },
   },
