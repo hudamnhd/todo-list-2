@@ -143,7 +143,12 @@ async function load_data_daily_tasks() {
   if (spinner) {
     spinner.style.display = "flex";
   }
-  const initialTasks = await get_cache("daily-tasks");
+
+  const load_local_storage = localStorage.getItem("daily-tasks");
+  const local_data = load_local_storage ? JSON.parse(load_local_storage) : {};
+  await save_data_daily_tasks(local_data);
+  const initialTasks = local_data;
+  // const initialTasks = await get_cache("daily-tasks");
 
   // const cache_log = await get_cache("log-daily-tasks");
 
@@ -159,6 +164,7 @@ async function load_data_daily_tasks() {
   try {
     if (initialTasks) {
       store.dispatch(setTasks(initialTasks));
+      localStorage.removeItem("daily-tasks");
     } else {
       store.dispatch(setTasks({}));
     }
@@ -270,8 +276,7 @@ const TodoNavigator = ({ data }) => {
 
   useBeforeUnload(
     React.useCallback(() => {
-      save_data_daily_tasks(data);
-      // localStorage.setItem("daily-tasks", JSON.stringify(data));
+      localStorage.setItem("daily-tasks", JSON.stringify(data));
     }, [data]),
   );
 
