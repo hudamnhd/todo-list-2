@@ -2,8 +2,8 @@
   "name": "Huda Web",
   "short_name": "hudaweb",
   "description": "Personal website",
-  "background_color": "#FFF",
-  "theme_color": "#FFF",
+  "background_color": "",
+  "theme_color": "",
   "display": "standalone",
   "icons": [
     {

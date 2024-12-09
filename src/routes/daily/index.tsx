@@ -304,7 +304,7 @@ const TodoNavigator = ({ data }) => {
         {(date_key.is_today || date_key.is_tomorrow) && (
           <AddTodo date={date_key} />
         )}
-        {/*<Debug data={todos} />*/}
+        <Debug data={todos} />
         <Unload data={data} date={date_key} active_task={active_task} />
       </div>
     </div>
@@ -745,25 +745,22 @@ const TodoTimer = ({
             ? Date.now() - new Date(active_task.start_at).getTime()
             : 0;
 
-          // const updatedTotalTime = active_task?.total_time + elapsedTime;
-          const updatedTotalTime = active_task?.total_time + elapsedTime;
+          const updatedTotalTime = active_task.total_time + elapsedTime;
           const estimate_time_done =
             Date.now() + TWENTY_FIVE_MINUTES - updatedTotalTime;
-          // Menghitung progress (berapa banyak lingkaran yang terisi)
+
           progress = Math.min(
             (updatedTotalTime / TWENTY_FIVE_MINUTES) * circumference,
             circumference,
           );
 
-          const timer = new Date(updatedTotalTime || active_task?.total_time)
+          const timer = new Date(updatedTotalTime || active_task.total_time)
             .toISOString()
             .substr(14, 5);
 
-          // Update tampilan progress menggunakan getElementById
+          // Update DOM manually
           const circleElement = document.getElementById("progress-circle");
-
           if (circleElement) {
-            // Update strokeDashoffset langsung
             circleElement.setAttribute(
               "stroke-dashoffset",
               (circumference - progress).toString(),
@@ -773,20 +770,18 @@ const TodoTimer = ({
           const timerFields = document.querySelectorAll(".todo-progress");
           for (const timerField of timerFields) {
             if (timerField instanceof HTMLDivElement) {
-              // timerField.innerHTML = `<span class="animate-pulse transition-all duration-500 ease-in-out">${timer}</span>`;
               timerField.innerHTML = timer;
             }
           }
 
           document.title = `${timer} ${active_task.title ? active_task.title.slice(0, 10) : "Untitled"}`;
 
-          // Cek apakah timer sudah mencapai 25 menit
           if (updatedTotalTime >= TWENTY_FIVE_MINUTES) {
-            clearInterval(timerRef.current); // Berhenti menjalankan timer
+            clearInterval(timerRef.current);
 
-            const todo = active_task as Task;
-            const sessionData = todo.sessions ? [...todo.sessions] : []; // Copy the old sessions array, or start with an empty array
-
+            const sessionData = active_task.sessions
+              ? [...active_task.sessions]
+              : [];
             const notif = {
               title: "Saatnya istirahat",
               description:
@@ -794,10 +789,9 @@ const TodoTimer = ({
             };
             showNotification(notif.title, notif.description);
 
-            // Add the new session to the copied array
             sessionData.push({
               date: new Date(estimate_time_done).toISOString(),
-              time: estimate_time_done as number,
+              time: TWENTY_FIVE_MINUTES as number,
             });
 
             dispatch(
@@ -808,10 +802,9 @@ const TodoTimer = ({
               }),
             );
           }
-        }, 1000); // Timer berjalan setiap detik
+        }, 1000);
       }
     } else {
-      // Clear timer jika tidak ada active todo
       if (timerRef.current) {
         clearInterval(timerRef.current);
         timerRef.current = null;
@@ -826,7 +819,7 @@ const TodoTimer = ({
         document.title = "Todo";
       }
     };
-  }, [todos]); // Update setiap todos berubah
+  }, [active_task]); // Make sure the effect reruns when active_task changes
 
   return (
     <div className="flex items-start justify-between gap-x-3 pt-4 px-4 md:gap-x-5 mt-2 h-[130px]">
