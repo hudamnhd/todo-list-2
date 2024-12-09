@@ -304,7 +304,7 @@ const TodoNavigator = ({ data }) => {
         {(date_key.is_today || date_key.is_tomorrow) && (
           <AddTodo date={date_key} />
         )}
-        <Debug data={todos} />
+        {/*<Debug data={todos} />*/}
         <Unload data={data} date={date_key} active_task={active_task} />
       </div>
     </div>
