@@ -23,18 +23,21 @@ const TaskSchema = z.object({
     .default("draft"),
   title: EmptyString,
   category: z.object({ label: EmptyString, color: EmptyString }),
-  start_at: z.string().nullable().default(null), // Nullable, set when task is completed
-  total_time: z.number().default(0),
   target_sessions: z.number().default(0),
-  completed_sessions: z.number().default(0),
-  end_at: z.string().nullable().default(null), // Nullable, set when task is completed
-  updated_at: z.string().nullable().default(null), // Nullable, set when task is completed
-  created_at: z.string(),
+  updated_at: z.number().nullable().default(null), // Nullable, set when task is completed
+  created_at: z.number(),
   sessions: z
     .array(
       z.object({
-        date: z.string(),
-        time: z.number(),
+        id: z.number(),
+        elapsed_time: z.number().default(0),
+        done: z.boolean().nullable(),
+        log: z.array(
+          z.object({
+            name: z.string(),
+            time: z.number(),
+          }),
+        ),
       }),
     )
     .default([]),

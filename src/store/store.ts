@@ -9,7 +9,7 @@ import { configureStore } from "@reduxjs/toolkit";
 //     await set_cache("daily-tasks", state.tasks.tasks);
 //
 //     const activity_log = {
-//       timestamp: new Date().toISOString(),
+//       timestamp: Date.now(),
 //       action: action.type,
 //       payload: action.payload,
 //     };
