@@ -32,7 +32,7 @@ import {
   updateSubTasksColumn,
   Task,
   setTasks,
-} from "@/features/daily-tasks/actions";
+} from "@/features/daily-tasks-board/actions";
 import { faker } from "@faker-js/faker";
 import { set_cache, get_cache } from "@/lib/cache-client";
 import {
@@ -145,16 +145,7 @@ async function load_data_daily_tasks() {
     spinner.style.display = "flex";
   }
 
-  const initialTasks = await get_cache("daily-tasks");
-
-  // const testData = generate_todos_by_date("2024-11-22", 30); // Data untuk 7 hari mulai dari 1 Desember 2024
-  // store.dispatch(setTasks(testData));
-  //
-  // if (spinner) {
-  //   spinner.style.display = "none";
-  // }
-  // initial_data = false;
-  // return;
+  const initialTasks = await get_cache("daily-tasks-board");
 
   try {
     if (initialTasks) {
@@ -246,7 +237,7 @@ const calculateStreak = (data) => {
 };
 
 async function save_data_daily_tasks(data) {
-  set_cache("daily-tasks", data);
+  set_cache("daily-tasks-board", data);
 }
 
 const TodoNavigator = ({ data }) => {
@@ -268,34 +259,323 @@ const TodoNavigator = ({ data }) => {
   const active_task = findTodosByStatusWithReduce(data, "progress");
   const all_session = calculateGlobalSessionCount(data);
   const streak_data = calculateStreak(data);
-  // This could be useState, useOptimistic, or other state
-
-  // useBeforeUnload(
-  //   React.useCallback(() => {
-  //     if (
-  //       data &&
-  //       Object.keys(data).length > 0 &&
-  //       Object.values(data).some((val) => val !== null && val !== undefined)
-  //     ) {
-  //       localStorage.setItem("daily-tasks", JSON.stringify(data));
-  //     }
-  //   }, [data]),
-  // );
 
   return (
     <div>
       <div>
-        <TaskApp
-          todos={todos}
-          goToNextDate={goToNextDate}
-          goToPreviousDate={goToPreviousDate}
-          date={date_key}
-          active_task={active_task}
-          all_session={all_session}
-          streak_data={streak_data}
-        />
+        <div className="flex w-full flex-col items-start gap-4 border-t-4 bg-gradient-to-t from-gray-100 to-gray-200 p-5 pb-10 dark:from-gray-800 dark:to-gray-900 md:rounded-lg xl:flex-row border-red-400">
+          <div className="grid gap-3 flex-1">
+            <div className="flex gap-4 w-full">
+              <div className="flex min-h-[100px] shrink-0 flex-col items-center justify-center rounded-xl border-t-4 bg-gradient-to-t p-1 px-3 border-red-600 from-red-300 to-red-500 text-white">
+                <div className="text-3xl font-bold">1.9%</div>
+                <div className="mt-1 flex items-center gap-1">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width={18}
+                    height={18}
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth={2}
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="lucide lucide-crosshair"
+                  >
+                    <circle cx={12} cy={12} r={10} />
+                    <line x1={22} x2={18} y1={12} y2={12} />
+                    <line x1={6} x2={2} y1={12} y2={12} />
+                    <line x1={12} x2={12} y1={6} y2={2} />
+                    <line x1={12} x2={12} y1={22} y2={18} />
+                  </svg>
+                  <div className="text-sm">Focus Rate</div>
+                </div>
+              </div>
 
-        <KanbanBoardTasks
+              <div className="w-full">
+                <div className="-mb-[7px] w-full text-xl font-bold">
+                  <div className="group mb-[7px] w-full px-0">
+                    Untitled Sprint
+                    <span className="invisible text-gray-400 group-hover:visible hidden">
+                      Add label
+                    </span>
+                  </div>
+                </div>
+                <div className="-mb-[7px] w-full">
+                  <div className="group mb-[7px] w-full px-0">
+                    <span className="text-gray-400 group-hover:visible visible">
+                      Write your reason here why it's important to finish this
+                      sprint.
+                    </span>
+                  </div>
+                </div>
+
+                <div className="inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 pr-2 text-sm capitalize bg-blue-500 text-white">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width={18}
+                    height={18}
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth={2}
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="lucide lucide-target stroke-1"
+                  >
+                    <circle cx={12} cy={12} r={10} />
+                    <circle cx={12} cy={12} r={6} />
+                    <circle cx={12} cy={12} r={2} />
+                  </svg>
+                  focus
+                </div>
+                <div className="mt-2" />
+                <div className="mt-3" />
+              </div>
+            </div>
+            <div className="w-fit flex shrink-0 flex-col items-center justify-center rounded-xl border-t-4 bg-gradient-to-t border-green-400 from-green-50 to-green-100">
+              <TaskApp
+                todos={todos}
+                goToNextDate={goToNextDate}
+                goToPreviousDate={goToPreviousDate}
+                date={date_key}
+                active_task={active_task}
+                all_session={all_session}
+                streak_data={streak_data}
+              />
+            </div>
+          </div>
+          <div className="hidden w-full">
+            <div
+              className="recharts-responsive-container"
+              style={{ width: "100%", height: 300, minWidth: 0 }}
+              width={0}
+              height={0}
+            />
+          </div>
+          <div className="mt-5 flex w-full items-start xl:mt-0 xl:max-w-md">
+            <div className="w-full gap-5 xl:ml-auto xl:max-w-2xl" id="stats">
+              <div className="relative mt-5">
+                <div className="h-4 w-full overflow-hidden rounded-xl bg-gray-400">
+                  <div className="h-4 bg-green-400" style={{ width: "50%" }} />
+                </div>
+                <div className="absolute -top-8 w-full">
+                  <div
+                    className="absolute flex items-center justify-end"
+                    style={{ width: 28 }}
+                  >
+                    <div className="shrink-0 rounded-lg bg-indigo-400 p-0.5 px-1 shadow-lg dark:bg-indigo-600">
+                      🙂
+                    </div>
+                  </div>
+                  <div
+                    className="absolute flex items-center justify-end"
+                    style={{ width: "30%" }}
+                  >
+                    <div className="shrink-0 rounded-lg bg-indigo-400 p-0.5 px-1 shadow-lg dark:bg-indigo-600">
+                      😀
+                    </div>
+                  </div>
+                  <div
+                    className="absolute flex items-center justify-end grayscale"
+                    style={{ width: "55%" }}
+                  >
+                    <div className="shrink-0 rounded-lg bg-indigo-400 p-0.5 px-1 shadow-lg dark:bg-indigo-600">
+                      😎
+                    </div>
+                  </div>
+                  <div
+                    className="absolute flex items-center justify-end grayscale"
+                    style={{ width: "77%" }}
+                  >
+                    <div className="shrink-0 rounded-lg bg-indigo-400 p-0.5 px-1 shadow-lg dark:bg-indigo-600">
+                      🤩
+                    </div>
+                  </div>
+                  <div
+                    className="absolute flex items-center justify-end grayscale"
+                    style={{ width: "100%" }}
+                  >
+                    <div className="shrink-0 rounded-lg bg-indigo-400 p-0.5 px-1 shadow-lg dark:bg-indigo-600">
+                      🎉
+                    </div>
+                  </div>
+                </div>
+                <div className="flex gap-1">
+                  <div className="text-sm">50.0% tasks done</div>
+                  <div className="ml-auto text-sm">2/4</div>
+                </div>
+              </div>
+              <div className="mt-2 w-full xl:max-w-md">
+                <div className="">
+                  <div className="mt-1 px-1 text-sm" />
+                  <div className="">
+                    <div className="text-sm">
+                      <div className="flex items-center justify-end gap-1 text-xs text-gray-500">
+                        <div className="">2 Weeks</div>
+                        <div className="ml-auto">
+                          <div>04 Dec 2024</div>
+                        </div>
+                        <div className="shrink-0 px-1">
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width={18}
+                            height={18}
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth={2}
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            className="lucide lucide-arrow-right"
+                          >
+                            <path d="M5 12h14" />
+                            <path d="m12 5 7 7-7 7" />
+                          </svg>
+                        </div>
+                        <div>
+                          <div>18 Dec 2024</div>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="">
+                      <div className="flex h-2 w-full justify-end overflow-hidden rounded-xl bg-gray-400">
+                        <div
+                          className="h-2 bg-green-400"
+                          style={{ width: "71.4286%" }}
+                        />
+                      </div>
+                      <div className="flex items-center text-sm">
+                        <div>Day 5</div>
+                        <div className="ml-auto">10 days remaining</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="mt-3 grid grid-cols-2 gap-2 md:flex md:grid-cols-4 md:justify-end">
+                <div className="flex items-center justify-center p-2">
+                  <button data-state="closed">
+                    <div className="flex items-center justify-center text-4xl">
+                      🌼
+                    </div>
+                  </button>
+                </div>
+                <div className="flex shrink-0 flex-col items-center rounded-lg border-t-4 border-gray-300 bg-gradient-to-t from-gray-100 to-gray-200 p-1 px-3 text-gray-900">
+                  <div className="text-center text-base font-bold">5 mins</div>
+                  <div className="mt-1 flex items-center gap-1">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width={18}
+                      height={18}
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth={2}
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      className="lucide lucide-clock"
+                    >
+                      <circle cx={12} cy={12} r={10} />
+                      <polyline points="12 6 12 12 16 14" />
+                    </svg>
+                    <div className="text-sm">Total time</div>
+                  </div>
+                </div>
+                <div className="flex flex-col items-center rounded-lg border-t-4 border-green-300 bg-gradient-to-t from-green-100 to-green-200 p-1 px-3 text-green-900">
+                  <div className="text-xl font-bold">2</div>
+                  <div className="flex items-center gap-1">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width={18}
+                      height={18}
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth={2}
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      className="lucide lucide-check"
+                    >
+                      <path d="M20 6 9 17l-5-5" />
+                    </svg>
+                    <div className="text-sm">Done</div>
+                  </div>
+                </div>
+                <div className="flex flex-col items-center rounded-lg border-t-4 border-orange-300 bg-gradient-to-t from-orange-100 to-orange-200 p-1 px-3 text-orange-900">
+                  <div className="text-xl font-bold">2</div>
+                  <div className="flex items-center gap-1">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width={18}
+                      height={18}
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth={2}
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      className="lucide lucide-square"
+                    >
+                      <rect width={18} height={18} x={3} y={3} rx={2} />
+                    </svg>
+                    <div className="text-sm">Todo</div>
+                  </div>
+                </div>
+                <div className="flex flex-col items-center rounded-lg border-t-4 border-blue-300 bg-gradient-to-t from-blue-100 to-blue-200 p-1 px-3 text-blue-900">
+                  <div className="text-xl font-bold">4</div>
+                  <div className="flex items-center gap-1">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width={18}
+                      height={18}
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth={2}
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      className="lucide lucide-list-todo"
+                    >
+                      <rect x={3} y={5} width={6} height={6} rx={1} />
+                      <path d="m3 17 2 2 4-4" />
+                      <path d="M13 6h8" />
+                      <path d="M13 12h8" />
+                      <path d="M13 18h8" />
+                    </svg>
+                    <div className="text-sm">All</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <button
+              type="button"
+              id="radix-:rdr:"
+              aria-haspopup="menu"
+              aria-expanded="false"
+              data-state="closed"
+              className="ml-5"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width={20}
+                height={20}
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth={2}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="lucide lucide-ellipsis-vertical text-gray-600"
+              >
+                <circle cx={12} cy={12} r={1} />
+                <circle cx={12} cy={5} r={1} />
+                <circle cx={12} cy={19} r={1} />
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <KanbanBoard
           tasks={todos}
           date={date_key}
           active_task={active_task}
@@ -304,7 +584,7 @@ const TodoNavigator = ({ data }) => {
         />
 
         <Unload data={data} date={date_key} active_task={active_task} />
-        {/*<Debug data={todos} />*/}
+        <Debug data={todos} />
         <div className="flex items-center justify-between">
           {(date_key.is_today || date_key.is_tomorrow) && (
             <AddTodo date={date_key} />
@@ -486,7 +766,7 @@ const importTodos = (event, data) => {
 };
 
 const TaskFirst = () => {
-  const todos = useAppSelector((state) => state.tasks.tasks);
+  const todos = useAppSelector((state) => state.board.tasks);
 
   React.useEffect(() => {
     load_data_daily_tasks();
@@ -496,7 +776,7 @@ const TaskFirst = () => {
   if (!initial_data) {
     return (
       <div className="relative inset-0  min-h-screen overflow-y-auto w-full bg-gray-200 dark:bg-gradient-to-tl dark:from-gray-950 dark:to-gray-900">
-        <main className="mx-auto max-w-3xl w-full rounded-base p-3 bg-gray-200 dark:bg-gradient-to-tl dark:from-gray-950 dark:to-gray-900">
+        <main className="mx-auto max-screen-3xl w-full rounded-base p-3 bg-gray-200 dark:bg-gradient-to-tl dark:from-gray-950 dark:to-gray-900">
           <TodoNavigator data={todos} />
         </main>
       </div>
@@ -729,164 +1009,7 @@ const TaskApp = ({
   // Menghitung total waktu dari semua todo
   const total_elapsed_time = calculateTotalTime(todos);
 
-  return (
-    <div className="">
-      {/*<RenderTracker name="TASK APP" stateName={totalTargetSessions} />*/}
-      <section className="relative mx-auto flex items-center justify-between w-full items-center">
-        <h1 className="bg-gradient-to-r from-blue-500 via-green-500 to-orange-500 inline-block text-transparent bg-clip-text uppercase text-xl my-2 font-sans font-bold">
-          MHDA
-        </h1>
-        <div className="ml-auto flex items-center gap-2">
-          <Popover>
-            <PopoverTrigger className="flex items-center rounded-lg bg-orange-400 p-2 text-orange-100 transition-all duration-500 ease-in-out text-sm">
-              <Flame />
-              <span>{streak_data?.current_streak}</span>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto">
-              <CalendarWeek
-                total_sessions={all_session}
-                streak_data={streak_data}
-              />
-            </PopoverContent>
-          </Popover>
-
-          <Link
-            className="rounded-lg bg-green-500 bg-gradient-to-tr from-yellow-200 via-yellow-200/50 to-yellow-100/50 p-2 text-black shadow hover:via-yellow-300/60 hover:to-yellow-200/50"
-            to="./garden"
-          >
-            <Trees />
-          </Link>
-
-          <Popover>
-            <PopoverTrigger className="flex items-center bg-gradient-to-tr from-yellow-200 to-yellow-400 text-yellow-900 shadow-sm hover:from-yellow-100 hover:to-yellow-400 rounded-lg p-2">
-              <BadgeIcon />
-            </PopoverTrigger>
-            <PopoverContent className="w-fit p-1 rounded-lg">
-              <WeeklyBadge total_sessions={total_sessions} />
-            </PopoverContent>
-          </Popover>
-          <Popover>
-            <PopoverTrigger className="rounded-lg lg p-1.5">
-              <FocusDisplay total_sessions={total_sessions} isBtn={true} />
-            </PopoverTrigger>
-            <PopoverContent className="w-auto">
-              <CalendarMonth total_sessions={all_session} />
-            </PopoverContent>
-          </Popover>
-          <ThemeSwitch />
-        </div>
-      </section>
-
-      <TodoTimer todos={todos} date={date} active_task={active_task} />
-      <div>
-        <div
-          style={{ animationDelay: `0.1s` }}
-          className="animate-roll-reveal [animation-fill-mode:backwards] flex flex-col items-end"
-        >
-          <div className="flex items-center gap-x-1 text-sm">
-            {date.q}
-            {date.is_today && <strong>(Today)</strong>}
-          </div>
-        </div>
-        <div
-          style={{ animationDelay: `0.1s` }}
-          className="animate-roll-reveal [animation-fill-mode:backwards] ml-auto flex w-full items-center  bg-gradient-to-l from-gray-100 via-gray-100/80 to-gray-100/0 py-2 pr-2 dark:from-gray-700 mt-1 mb-2 rounded-md"
-        >
-          <div className="mb-1 mt-3 flex justify-end">
-            <div className="text-xs md:text-sm ml-3">
-              Total focus time:{" "}
-              <strong>{formatFocusTime(total_elapsed_time)}</strong>
-            </div>
-          </div>
-          <div className="ml-auto flex items-center gap-2">
-            <Button
-              onClick={goToPreviousDate}
-              variant="outline"
-              className="h-8 w-8 p-0"
-            >
-              <span className="sr-only">Go to previous page</span>
-              <ChevronLeftIcon className="h-4 w-4" />
-            </Button>
-            <Button
-              onClick={goToNextDate}
-              variant="outline"
-              className="h-8 w-8 p-0"
-            >
-              <span className="sr-only">Go to next page</span>
-              <ChevronRightIcon className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
-
-        <ProgressBarIndicator
-          totalTargetSessions={totalTargetSessions}
-          total_sessions={total_sessions}
-          active_task={active_task}
-        />
-      </div>
-    </div>
-  );
-};
-
-const ProgressBarIndicator = ({
-  totalTargetSessions,
-  total_sessions,
-  active_task,
-}: { totalTargetSessions: number; total_sessions: number }) => {
-  return (
-    <React.Fragment>
-      <div
-        style={{ animationDelay: `0.1s` }}
-        className="animate-roll-reveal [animation-fill-mode:backwards] mb-3 text-sm rounded-md transition-all duration-500 ease-in-out"
-      >
-        <div className="relative h-8 w-full rounded-md bg-gray-300 dark:bg-gray-600">
-          <div className="flex h-8 items-center justify-end gap-1 px-2">
-            Max 16
-            <Rocket className="h-5 w-5" />
-          </div>
-          <div
-            className={cn(
-              "absolute top-0 flex h-8 items-center justify-end gap-1 overflow-hidden rounded-l-md bg-gray-400 px-2 text-white transition-all duration-500 ease-in-out",
-              totalTargetSessions >= 16 && "rounded-md",
-            )}
-            style={{
-              width: `${(totalTargetSessions > 16 ? 16 / 16 : totalTargetSessions / 16) * 100}%`,
-            }}
-          >
-            {totalTargetSessions}
-            <Crosshair className="h-5 w-5 animate-pulse" />
-          </div>
-          <div
-            className={cn(
-              "z-10 absolute top-0 flex h-8 items-center justify-end gap-1 overflow-hidden bg-green-400 px-2 text-gray-600 rounded-l-md transition-all duration-500 ease-in-out",
-              totalTargetSessions >= 16 && "rounded-md",
-            )}
-            style={{
-              width: `${(total_sessions > 16 ? 16 / 16 : total_sessions / 16) * 100}%`,
-            }}
-          >
-            <div
-              className="flex shrink-0 items-center gap-1 text-sm"
-              style={{ opacity: 1 }}
-            >
-              {totalTargetSessions >= 16 ? (
-                <CircleCheckBig className="ml-2 h-5 w-5" />
-              ) : (
-                <Circle className="h-5 w-5" />
-              )}
-              {total_sessions} sesi
-              <ArrowRight
-                className={cn(
-                  "h-5 w-5 ",
-                  active_task && "ml-2 bounce-left-right",
-                )}
-              />
-            </div>
-          </div>
-        </div>
-      </div>
-    </React.Fragment>
-  );
+  return <TodoTimer todos={todos} date={date} active_task={active_task} />;
 };
 
 const AddTodo = ({ date }) => {
@@ -1027,8 +1150,8 @@ const TodoTimer = ({
   }, [active_task]); // Make sure the effect reruns when active_task changes
 
   return (
-    <div className="flex items-start justify-between gap-x-3 pt-4 px-4 md:gap-x-5 mt-2 h-[130px]">
-      <div className="flex items-start gap-6 md:gap-8">
+    <div className="flex items-start justify-between gap-x-3 py-3 px-4 max-w-[375px]">
+      <div className="flex items-start gap-3">
         <div
           style={{ animationDelay: `0.05s` }}
           className="animate-roll-reveal [animation-fill-mode:backwards] w-[90px] rounded-full bg-white dark:bg-white/40 backdrop-blur-md text-text dark:text-darkText shadow"
@@ -1268,612 +1391,22 @@ const TodoTimer = ({
                 <CircleCheckBig className="h-5 w-5" />
                 Mark as Done
               </button>
-              <button className="hidden items-center justify-center font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 rounded-md flex h-auto gap-1 p-1 py-1 text-sm bg-transparent text-foreground hover:bg-red-600 hover:text-white">
-                <div className="mr-1 px-0">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width={18}
-                    height={18}
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth={2}
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    className="lucide lucide-ban"
-                  >
-                    <circle cx={12} cy={12} r={10} />
-                    <path d="m4.9 4.9 14.2 14.2" />
-                  </svg>
-                </div>
-                Cancel
-              </button>
-            </div>
-            <div className="flex gap-2 invisible">
-              <button
-                className="items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 text-destructive-foreground flex h-auto gap-1 bg-orange-600 px-2 py-1 hover:bg-orange-500"
-                data-testid="break-5-mins"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width={18}
-                  height={18}
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth={2}
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className="lucide lucide-coffee"
-                >
-                  <path d="M10 2v2" />
-                  <path d="M14 2v2" />
-                  <path d="M16 8a1 1 0 0 1 1 1v8a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4V9a1 1 0 0 1 1-1h14a4 4 0 1 1 0 8h-1" />
-                  <path d="M6 2v2" />
-                </svg>
-                5 mins
-              </button>
-              <button
-                className="items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 text-destructive-foreground flex h-auto gap-1 bg-orange-600 px-2 py-1 hover:bg-orange-500"
-                data-testid="break-15-mins"
-              >
-                <div className="flex gap-1">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width={18}
-                    height={18}
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth={2}
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    className="lucide lucide-coffee"
-                  >
-                    <path d="M10 2v2" />
-                    <path d="M14 2v2" />
-                    <path d="M16 8a1 1 0 0 1 1 1v8a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4V9a1 1 0 0 1 1-1h14a4 4 0 1 1 0 8h-1" />
-                    <path d="M6 2v2" />
-                  </svg>
-                </div>
-                15 mins
-              </button>
             </div>
           </div>
         )}
       </div>
-
-      {active_task ? (
-        <div
-          style={{ animationDelay: `0.3s` }}
-          className={cn(
-            "sm:block hidden relative w-[140px] pt-3",
-            active_task &&
-              "animate-roll-reveal [animation-fill-mode:backwards]",
-          )}
-        >
-          {/*<img src="/rocket.gif" alt="Rocket" className="animate-pulse" />*/}
-          <HorseAnimation />
-        </div>
-      ) : (
-        <div
-          style={{ animationDelay: `0.1s` }}
-          className={cn(
-            "sm:block hidden relative w-[80px] pt-1",
-            !active_task && "animate-slide-top [animation-fill-mode:backwards]",
-          )}
-        >
-          <img src="/sleep.gif" />
-        </div>
-      )}
     </div>
   );
 };
 
 import {
   format,
-  startOfMonth,
-  endOfMonth,
-  eachDayOfInterval,
   isToday,
   isYesterday,
   isTomorrow,
-  isWeekend,
-  addMonths,
-  subMonths,
   getDay,
-  startOfWeek,
-  endOfWeek,
-  subWeeks,
+  eachDayOfInterval,
 } from "date-fns";
-
-const CalendarMonth = ({ total_sessions }) => {
-  const [currentMonth, setCurrentMonth] = useState(new Date());
-  const [daysInMonth, setDaysInMonth] = useState([]);
-
-  // Fungsi untuk memperbarui kalender
-  const updateCalendar = () => {
-    // Menghitung tanggal mulai dan akhir bulan di waktu lokal
-    const startOfCurrentMonth = startOfMonth(currentMonth);
-    const endOfCurrentMonth = endOfMonth(currentMonth);
-
-    // Mengambil semua hari dalam bulan ini
-    const days = eachDayOfInterval({
-      start: startOfCurrentMonth,
-      end: endOfCurrentMonth,
-    });
-
-    // Menghitung hari pertama bulan ini
-    const firstDayOfMonth = getDay(startOfCurrentMonth);
-
-    // Menyesuaikan hari pertama kalender, agar selalu dimulai dari Senin
-    // Jika firstDayOfMonth adalah 0 (Minggu), kita anggap sebagai 7 (Sabtu),
-    // dan kita sesuaikan paddingnya.
-    const adjustedFirstDay = firstDayOfMonth === 0 ? 6 : firstDayOfMonth - 1;
-
-    // Menambahkan padding untuk hari-hari sebelum tanggal 1 bulan
-    const paddedDays = Array(adjustedFirstDay).fill(null).concat(days);
-
-    setDaysInMonth(paddedDays);
-  };
-
-  // Update kalender saat currentMonth berubah
-  useEffect(() => {
-    updateCalendar();
-  }, [currentMonth]);
-
-  // Menangani navigasi bulan berikutnya dan sebelumnya
-  const handleNextMonth = () => {
-    setCurrentMonth(addMonths(currentMonth, 1));
-  };
-
-  const handlePreviousMonth = () => {
-    setCurrentMonth(subMonths(currentMonth, 1));
-  };
-
-  return (
-    <div className="bg-background">
-      <div className="flex justify-start items-center gap-3 items-center mb-4">
-        <h2 className="text-xl font-semibold">
-          {format(currentMonth, "MMMM yyyy")}
-        </h2>
-        <Button
-          onClick={handlePreviousMonth}
-          variant="outline"
-          className="h-8 w-8 p-0"
-        >
-          <span className="sr-only">Go to previous page</span>
-          <ChevronLeftIcon className="h-4 w-4" />
-        </Button>
-        <Button
-          onClick={handleNextMonth}
-          variant="outline"
-          className="h-8 w-8 p-0"
-        >
-          <span className="sr-only">Go to next page</span>
-          <ChevronRightIcon className="h-4 w-4" />
-        </Button>
-      </div>
-      <div className="flex gap-10">
-        <div className="w-full grid grid-cols-7 items-center justify-center gap-3">
-          {/* Header hari (Senin, Selasa, Rabu, dll.) */}
-          <div className="rounded-t border-b text-center font-bold">Mo</div>
-          <div className="rounded-t border-b text-center font-bold">Tu</div>
-          <div className="rounded-t border-b text-center font-bold">We</div>
-          <div className="rounded-t border-b text-center font-bold">Th</div>
-          <div className="rounded-t border-b text-center font-bold">Fr</div>
-          <div className="rounded-t border-b text-center font-bold">Sa</div>
-          <div className="rounded-t border-b text-center font-bold">Su</div>
-
-          {daysInMonth.map((day, index) => {
-            const dataKey = day ? format(day, "yyyy-MM-dd") : null;
-            const sessions = total_sessions[dataKey] || 0;
-            return (
-              <div
-                key={index}
-                className={`rounded-lg cursor-pointer
-            ${day ? "" : "bg-transparent"}  // Handle empty cells
-            ${isToday(day) ? "" : ""}
-            ${isWeekend(day) ? "" : ""}`}
-              >
-                <div className="text-center">{day ? format(day, "d") : ""}</div>
-                {day && (
-                  <button data-state="closed">
-                    <FocusDisplay total_sessions={sessions} />
-                  </button>
-                )}
-              </div>
-            );
-          })}
-        </div>
-        <div className="w-full max-w-[240px] rounded bg-gray-50 p-5 dark:bg-gray-800">
-          <div className="">Perisai fokus</div>
-          <hr className="my-3" />
-          <FocusList />
-        </div>
-      </div>
-    </div>
-  );
-};
-
-const CalendarWeek = ({ total_sessions, streak_data }) => {
-  const [daysInMonth, setDaysInMonth] = useState([]);
-
-  // Fungsi untuk memperbarui kalender
-
-  const updateCalendar = () => {
-    // Tanggal hari ini
-    const today = new Date();
-
-    // Awal dan akhir minggu ini
-    const startOfThisWeek = startOfWeek(today, { weekStartsOn: 1 }); // Senin sebagai awal minggu
-    const endOfThisWeek = endOfWeek(today, { weekStartsOn: 1 });
-
-    // Awal dan akhir minggu lalu
-    const startOfLastWeek = startOfWeek(subWeeks(today, 1), {
-      weekStartsOn: 1,
-    });
-    const endOfLastWeek = endOfWeek(subWeeks(today, 1), { weekStartsOn: 1 });
-
-    // Mengambil semua hari dari minggu lalu dan minggu ini
-    const lastWeekDays = eachDayOfInterval({
-      start: startOfLastWeek,
-      end: endOfLastWeek,
-    });
-
-    const thisWeekDays = eachDayOfInterval({
-      start: startOfThisWeek,
-      end: endOfThisWeek,
-    });
-
-    // Gabungkan minggu lalu dan minggu ini
-    const twoWeeksDays = [...lastWeekDays, ...thisWeekDays];
-
-    // Update state dengan 2 minggu tersebut
-    setDaysInMonth(twoWeeksDays);
-  };
-
-  // Update kalender saat currentMonth berubah
-  useEffect(() => {
-    updateCalendar();
-  }, []);
-
-  return (
-    <div className="bg-background">
-      <div className="flex gap-10">
-        <div>
-          <div className="flex items-center py-5">
-            <div>
-              <div className="text-xl">
-                {streak_data?.current_streak} day streak
-              </div>
-              <div className="text-sm text-gray-700 dark:text-gray-400">
-                Your longest streak is {streak_data?.longest_streak} days
-              </div>
-            </div>
-            <div className="ml-auto">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width={84}
-                height={84}
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth={2}
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="lucide lucide-flame-kindling text-orange-400"
-              >
-                <path d="M12 2c1 3 2.5 3.5 3.5 4.5A5 5 0 0 1 17 10a5 5 0 1 1-10 0c0-.3 0-.6.1-.9a2 2 0 1 0 3.3-2C8 4.5 11 2 12 2Z" />
-                <path d="m5 22 14-4" />
-                <path d="m5 18 14 4" />
-              </svg>
-            </div>
-          </div>
-          <div className="grid grid-cols-7 justify-center gap-5 rounded-lg bg-orange-400 p-2 px-3 text-white">
-            <div>Mo</div>
-            <div>Tu</div>
-            <div>We</div>
-            <div>Th</div>
-            <div>Fr</div>
-            <div>Sa</div>
-            <div>Su</div>
-
-            {daysInMonth.map((day, index) => {
-              const dataKey = day ? format(day, "yyyy-MM-dd") : null;
-              const sessions = total_sessions[dataKey] || 0;
-              const isNow = new Date() >= day;
-
-              const _day = day ? format(day, "d") : "";
-              return (
-                <React.Fragment key={index}>
-                  <div className="group flex flex-col items-center gap-y-2 relative transition-all duration-500 ease-in-out">
-                    <div
-                      key={index}
-                      className={cn(
-                        "flex h-7 w-7 items-center justify-center rounded-full",
-                        sessions > 0
-                          ? " bg-green-500 text-white"
-                          : " bg-red-500 text-white",
-                        isWeekend(day) && sessions === 0
-                          ? " bg-gray-300 text-black"
-                          : isWeekend(day) && sessions > 0
-                            ? "bg-green-600 text-white"
-                            : "",
-                        !isNow && " bg-background text-foreground",
-                      )}
-                    >
-                      <span className="group-hover:block hidden">{_day}</span>
-                      {isNow && (
-                        <span className="group-hover:hidden">
-                          {sessions > 0 ? <Check /> : <X />}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                </React.Fragment>
-              );
-            })}
-          </div>
-          <div className="mt-2 text-sm text-gray-500 dark:text-gray-400">
-            *Weekend is not affecting streak calculation
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-const FocusDisplay = ({ total_sessions, isBtn }) => {
-  return <div>{getFocusComponent(total_sessions, isBtn)}</div>;
-};
-
-const focusSessions = [
-  {
-    minFocus: 16,
-    sessions: "≥ 16 sesi fokus",
-    styles: {
-      outerBorder:
-        "border-white bg-gradient-to-r from-blue-500 to-blue-300 ring-4 ring-orange-400",
-      middleBorder:
-        "border-white bg-gradient-to-r from-yellow-300 to-yellow-100",
-      innerBorder:
-        "border-green-500 bg-gradient-to-r from-green-500 to-green-300",
-    },
-  },
-  {
-    minFocus: 12,
-    sessions: "≥ 12 sesi fokus",
-    styles: {
-      outerBorder: "border-blue-500 bg-gradient-to-r from-blue-500 to-blue-300",
-      middleBorder:
-        "border-white bg-gradient-to-r from-yellow-300 to-yellow-100",
-      innerBorder:
-        "border-green-500 bg-gradient-to-r from-green-500 to-green-300",
-    },
-  },
-  {
-    minFocus: 4,
-    sessions: "≥ 4 sesi fokus",
-    styles: {
-      outerBorder: "border-gray-300",
-      middleBorder:
-        "border-white bg-gradient-to-r from-yellow-300 to-yellow-100",
-      innerBorder:
-        "border-green-500 bg-gradient-to-r from-green-500 to-green-300",
-    },
-  },
-  {
-    minFocus: 1,
-    sessions: "≥ 1 sesi fokus",
-    styles: {
-      outerBorder: "border-gray-300",
-      middleBorder: "border-gray-300",
-      innerBorder:
-        "border-green-500 bg-gradient-to-r from-green-500 to-green-300",
-    },
-  },
-  {
-    minFocus: 0,
-    sessions: "0 sesi fokus",
-    styles: {
-      outerBorder: "border-gray-300",
-      middleBorder: "border-gray-300",
-      innerBorder: "border-gray-300",
-    },
-  },
-];
-
-const getFocusComponent = (focusValue, isBtn) => {
-  // Cari data yang cocok berdasarkan nilai fokus
-  const focusData = focusSessions.find((item) => focusValue >= item.minFocus);
-
-  // Jika tidak ada data yang cocok, return null (atau fallback)
-  if (!focusData) return null;
-
-  if (isBtn)
-    return (
-      <div className="flex items-center gap-2 ">
-        <div>
-          <div
-            className={`shrink-0 rounded-full border-2 p-1 ${focusData.styles.outerBorder} transition-all duration-500 ease-in-out`}
-          >
-            <div
-              className={`rounded-full border-2 p-1 ${focusData.styles.middleBorder} transition-all duration-500 ease-in-out`}
-            >
-              <div
-                className={`rounded-full border-2 h-1.5 w-1.5 ${focusData.styles.innerBorder} transition-all duration-500 ease-in-out`}
-              />
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  // Return JSX sesuai gaya yang ditemukan
-  return (
-    <div className="flex items-center gap-2">
-      <div>
-        <div
-          className={`shrink-0 rounded-full border-2 p-1.5 ${focusData.styles.outerBorder}`}
-        >
-          <div
-            className={`rounded-full border-2 p-1.5 ${focusData.styles.middleBorder}`}
-          >
-            <div
-              className={`rounded-full border-2 h-2 w-2 ${focusData.styles.innerBorder}`}
-            />
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-const FocusList = () => {
-  return (
-    <div>
-      {focusSessions.map((item, index) => (
-        <div key={index} className="mb-2 flex items-center gap-3 ">
-          <div>
-            <div
-              className={`shrink-0 rounded-full border-2 p-1.5 ${item.styles.outerBorder}`}
-            >
-              <div
-                className={`rounded-full border-2 p-1.5 ${item.styles.middleBorder}`}
-              >
-                <div
-                  className={`rounded-full border-2 h-2 w-2 ${item.styles.innerBorder}`}
-                />
-              </div>
-            </div>
-          </div>
-          <div>{item.sessions}</div>
-        </div>
-      ))}
-    </div>
-  );
-};
-
-type WeeklyBadgeProps = {
-  total_sessions: number; // Total sesi minggu ini
-};
-
-const WeeklyBadge: React.FC<WeeklyBadgeProps> = ({ total_sessions }) => {
-  // Tentukan tingkat lencana berdasarkan sesi
-  const getBadgeData = (sessions: number) => {
-    if (sessions >= 48) {
-      return {
-        label: "Master Fokus",
-        color: "from-red-500 to-red-700",
-        emoji: "🔥",
-      };
-    } else if (sessions >= 40) {
-      return {
-        label: "Ahli Fokus",
-        color: "from-orange-500 to-orange-600",
-        emoji: "🚀",
-      };
-    } else if (sessions >= 32) {
-      return {
-        label: "Pro Fokus",
-        color: "from-yellow-500 to-yellow-600",
-        emoji: "🌟",
-      };
-    } else if (sessions >= 24) {
-      return {
-        label: "Fokus Tinggi",
-        color: "from-green-500 to-green-600",
-        emoji: "💪",
-      };
-    } else if (sessions >= 16) {
-      return {
-        label: "Fokus Bagus",
-        color: "from-blue-500 to-blue-600",
-        emoji: "🎯",
-      };
-    } else if (sessions >= 8) {
-      return {
-        label: "Awal Fokus",
-        color: "from-purple-500 to-purple-600",
-        emoji: "✨",
-      };
-    } else {
-      return {
-        label: "Mulai Fokus",
-        color: "from-gray-400 to-gray-500",
-        emoji: "🌀",
-      };
-    }
-  };
-
-  const { label, color, emoji } = getBadgeData(total_sessions);
-
-  return (
-    <div
-      className={`flex-shrink-0 relative overflow-hidden bg-gradient-to-r ${color} rounded-lg w-full max-w-[250px] mx-auto shadow-lg`}
-    >
-      <svg
-        className="absolute bottom-0 left-0 mb-8"
-        viewBox="0 0 375 283"
-        fill="none"
-        style={{ transform: "scale(1.5)", opacity: "0.1" }}
-      >
-        <rect
-          x="159.52"
-          y={175}
-          width={152}
-          height={152}
-          rx={8}
-          transform="rotate(-45 159.52 175)"
-          fill="white"
-        />
-        <rect
-          y="107.48"
-          width={152}
-          height={152}
-          rx={8}
-          transform="rotate(-45 0 107.48)"
-          fill="white"
-        />
-      </svg>
-      <div className="relative pt-10 px-10 flex items-center justify-center">
-        <div
-          className="block absolute w-48 h-48 bottom-0 left-0 -mb-24 ml-3"
-          style={{
-            background: "radial-gradient(black, transparent 60%)",
-            transform: "rotate3d(0, 0, 1, 20deg) scale3d(1, 0.6, 1)",
-            opacity: "0.2",
-          }}
-        />
-        {/* Icon */}
-        <div className="relative mb-4 ">
-          <div
-            className={`absolute inset-0 animate-pulse bg-gradient-to-r ${color} rounded-full blur-lg opacity-75`}
-          ></div>
-          <div
-            className={`relative flex items-center justify-center w-24 h-24 rounded-full bg-gradient-to-b ${color} p-4 shadow-xl ring ring-gray-200`}
-          >
-            <span className="text-4xl">{emoji}</span>
-          </div>
-        </div>
-      </div>
-      <div className="relative text-white px-6 pb-6 mt-6 w-[200px]">
-        <span className="block opacity-75 -mb-1">{label}</span>
-        <div className="flex justify-between">
-          <span className="block font-semibold text-xl">
-            {total_sessions} sesi hari ini
-          </span>
-        </div>
-        <div className="relative w-full bg-gray-200 dark:bg-gray-700 h-4 rounded-full overflow-hidden mt-4">
-          <div
-            className="bg-gradient-to-r from-green-400 to-green-600 h-full rounded-full"
-            style={{ width: `${(total_sessions / 48) * 100}%` }}
-          ></div>
-        </div>
-      </div>
-    </div>
-  );
-};
 
 const DeleteTask: React.FC = ({
   task_title,
@@ -2278,81 +1811,6 @@ function StatusDot({ color }: { color?: string }) {
   );
 }
 
-function SelectFilter({ value, setValue, tasks }) {
-  const taskCategories = [
-    { label: "Urgent", color: "#e11d48" },
-    { label: "High Priority", color: "#f97316" },
-    { label: "Medium Priority", color: "#f59e0b" },
-    { label: "Low Priority", color: "#6ee7b7" },
-    { label: "Personal", color: "#4ade80" },
-    { label: "Work", color: "#0284c7" },
-    { label: "Important Meetings", color: "#2563eb" },
-    { label: "Research", color: "#4f46e5" },
-    { label: "Creative", color: "#7c3aed" },
-    { label: "Review", color: "#9d4edd" },
-    { label: "Reports", color: "#c026d3" },
-    { label: "Follow-up", color: "#d946ef" },
-    { label: "General", color: "#9ca3af" },
-    { label: "Team Collaboration", color: "#f472b6" },
-    { label: "Client", color: "#fb923c" },
-    { label: "Training", color: "#fbbf24" },
-    { label: "Deadline", color: "#a3e635" },
-    { label: "Admin", color: "#38bdf8" },
-    { label: "Development", color: "#9333ea" },
-    { label: "Miscellaneous", color: "#1e3a8a" },
-  ];
-  // Menggabungkan colorCount dengan taskCategories
-
-  const colorCount = tasks.reduce((acc, task) => {
-    const color = task.category?.color;
-    if (color) {
-      acc[color] = (acc[color] || 0) + 1; // Menambahkan count untuk warna yang sama
-    }
-    return acc;
-  }, {});
-  const mergedCategories = taskCategories
-    .map((category) => {
-      const count = colorCount[category.color]; // Ambil count berdasarkan warna
-      if (count) {
-        return { ...category, count }; // Menambahkan count ke kategori jika ada
-      }
-      return null; // Jika count 0, kembalikan null
-    })
-    .filter(Boolean); // Menghapus semua kategori yang bernilai null (yang tidak memiliki count)
-
-  return (
-    <div className="flex items-end w-full justify-end mb-2">
-      <Select value={value} onValueChange={setValue}>
-        <SelectTrigger className="max-w-[150px] p-0 flex gap-x-1 items-center border-none focus:ring-0 shadow-none w-fit p-0 h-6 text-muted-foreground">
-          <SelectValue placeholder="Filter Category" />
-          <Filter className="w-4 h-4 flex-none" />
-        </SelectTrigger>
-        <SelectContent className="[&_*[role=option]>span>svg]:shrink-0 [&_*[role=option]>span>svg]:text-muted-foreground/80 [&_*[role=option]>span]:end-2 [&_*[role=option]>span]:start-auto [&_*[role=option]>span]:flex [&_*[role=option]>span]:items-center [&_*[role=option]>span]:gap-2 [&_*[role=option]]:pe-8 [&_*[role=option]]:ps-2">
-          <SelectItem value="all">
-            <span className="flex items-center gap-1 mr-2">
-              <StatusDot />
-              <span className="truncate">
-                All Category{" "}
-                {tasks.length > 0 && <span>( {tasks.length} )</span>}
-              </span>
-            </span>
-          </SelectItem>
-          {mergedCategories.map((item, index) => (
-            <SelectItem key={index} value={item.color}>
-              <span className="flex items-center gap-1 mr-2">
-                <StatusDot color={item.color} />
-                <span className="truncate">
-                  {item.label} ( {item.count} )
-                </span>
-              </span>
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-    </div>
-  );
-}
-
 function SelectDemo({ task, subtask, date }: { task: Task }) {
   const dispatch = useAppDispatch();
   const taskCategories = [
@@ -2434,174 +1892,12 @@ import {
   type DragStartEvent,
 } from "@dnd-kit/core";
 import { SortableContext, arrayMove } from "@dnd-kit/sortable";
-import { createPortal } from "react-dom";
-
-import { debounce } from "lodash";
-function KanbanBoardTasks({ tasks: _tasks, date, active_task }) {
-  const [tasks, setTasks] = useState<Task[]>(_tasks);
-  const [activeTask, setActiveTask] = useState<Task | null>(null);
-
-  useEffect(() => {
-    setTasks(_tasks);
-  }, [_tasks]); // Dependency on _tasks, so it will update whenever _tasks changes
-
-  const dispatch = useAppDispatch();
-
-  // Debounced function to dispatch the action after a delay
-  const debounceOnChange = debounce(() => {
-    dispatch(updateTasksColumn({ key: date.timestamp, updated_task: tasks }));
-  }, 3000); // Set delay to 3 seconds
-
-  useEffect(() => {
-    debounceOnChange(); // Call the debounced function whenever tasks change
-    // Cleanup the debounce function when the component is unmounted or before next render
-    return () => {
-      debounceOnChange.cancel();
-    };
-  }, [tasks]);
-
-  const sensors = useSensors(useSensor(MouseSensor), useSensor(TouchSensor));
-  const [value, setValue] = useState("all");
-  const filteredTasks =
-    value !== "all"
-      ? tasks
-          .filter((task) => {
-            // Memfilter tasks yang memiliki kategori utama yang cocok
-            const taskMatches = task.category?.color === value;
-
-            // Memfilter sub_tasks yang memiliki kategori yang cocok
-            const filteredSubTasks = task.sub_tasks.filter(
-              (subTask) => subTask.category?.color === value,
-            );
-
-            // Jika task memiliki kategori utama yang cocok, dan ada sub_task yang cocok, kembalikan task
-            return taskMatches && filteredSubTasks.length > 0;
-          })
-          .map((task) => ({
-            ...task,
-            sub_tasks: task.sub_tasks.filter(
-              (subTask) => subTask.category?.color === value,
-            ), // Filter sub_tasks setelah task terpilih
-          }))
-      : tasks;
-
-  return (
-    <React.Fragment>
-      <SelectFilter value={value} setValue={setValue} tasks={tasks} />
-      {filteredTasks.length > 0 ? (
-        <DndContext
-          sensors={sensors}
-          onDragStart={onDragStart}
-          onDragEnd={onDragEnd}
-        >
-          <BoardColumnTask
-            tasks={filteredTasks}
-            date={date}
-            active_task={active_task}
-          />
-
-          {"document" in window &&
-            createPortal(
-              <DragOverlay>
-                {activeTask && (
-                  <MainTaskCard
-                    task={activeTask}
-                    date={date}
-                    index={0}
-                    active_task={active_task}
-                    isOverlay
-                  />
-                )}
-              </DragOverlay>,
-              document.body,
-            )}
-        </DndContext>
-      ) : (
-        <div className="">
-          <p className="text-center text-gray-600 leading-relaxed flex gap-x-2 items-center justify-center">
-            {value !== "all" && (
-              <span className="flex gap-x-2">
-                <StatusDot color={value} />
-              </span>
-            )}{" "}
-            No {date.is_tomorrow && " planing "} task in {date.q}
-          </p>
-        </div>
-      )}
-    </React.Fragment>
-  );
-
-  function onDragStart(event: DragStartEvent) {
-    if (!hasDraggableData(event.active)) return;
-    const data = event.active.data.current;
-    if (data?.type === "Task") {
-      setActiveTask(data.task);
-      return;
-    }
-  }
-
-  function onDragEnd(event: DragEndEvent) {
-    const { active, over } = event;
-    setActiveTask(null);
-    if (!over) return;
-
-    const activeId = active.id;
-    const overId = over.id;
-
-    if (activeId === overId) return;
-
-    if (!hasDraggableData(active) || !hasDraggableData(over)) return;
-
-    const activeData = active.data.current;
-    const overData = over.data.current;
-
-    const isActiveATask = activeData?.type === "Task";
-    const isOverATask = overData?.type === "Task";
-
-    if (!isActiveATask) return;
-
-    // Im dropping a Task over another Task
-    if (isActiveATask && isOverATask) {
-      setTasks((tasks) => {
-        const activeIndex = tasks.findIndex((t) => t.id === activeId);
-        const overIndex = tasks.findIndex((t) => t.id === overId);
-
-        if (activeIndex === -1 || overIndex === -1) return tasks; // Handle case when activeId or overId not found
-
-        const updatedTasks = [...tasks]; // Create a shallow copy of tasks
-
-        const activeTask = updatedTasks[activeIndex];
-        const overTask = updatedTasks[overIndex];
-
-        if (
-          activeTask &&
-          overTask &&
-          activeTask.columnId !== overTask.columnId
-        ) {
-          updatedTasks[activeIndex] = {
-            ...activeTask,
-            columnId: overTask.columnId,
-          }; // Update columnId of active task
-          return arrayMove(updatedTasks, activeIndex, overIndex - 1);
-        }
-
-        return arrayMove(updatedTasks, activeIndex, overIndex);
-      });
-    }
-  }
-}
 
 function KanbanSubTasks({ sub_tasks, task, date, active_task }) {
   const dispatch = useAppDispatch();
   const sensors = useSensors(useSensor(MouseSensor), useSensor(TouchSensor));
-  const [subtasks, setSubtasks] = useState<Task[]>(sub_tasks);
-  const [activeTask, setActiveTask] = useState<Task | null>(null);
+  const [subtasks, setSubtasks] = useState(sub_tasks);
 
-  useEffect(() => {
-    setSubtasks(sub_tasks);
-  }, [sub_tasks]); // Dependency on _tasks, so it will update whenever _tasks changes
-
-  // Debounced function to dispatch the action after a delay
   const debounceOnChange = debounce(() => {
     dispatch(
       updateSubTasksColumn({
@@ -2618,8 +1914,7 @@ function KanbanSubTasks({ sub_tasks, task, date, active_task }) {
     return () => {
       debounceOnChange.cancel();
     };
-  }, [subtasks]);
-
+  }, [subtasks]); // Trigger when tasks change
   return (
     <DndContext
       sensors={sensors}
@@ -2632,38 +1927,16 @@ function KanbanSubTasks({ sub_tasks, task, date, active_task }) {
         task={task}
         active_task={active_task}
       />
-
-      {"document" in window &&
-        createPortal(
-          <DragOverlay>
-            {activeTask && (
-              <SubTaskComponentCard
-                index={0}
-                date={date}
-                active_task={active_task}
-                subtask={activeTask}
-                task={task}
-                isOverlay
-              />
-            )}
-          </DragOverlay>,
-          document.body,
-        )}
     </DndContext>
   );
 
   function onDragStart(event: DragStartEvent) {
-    if (!hasDraggableData(event.active)) return;
-    const data = event.active.data.current;
-    if (data?.type === "Task") {
-      setActiveTask(data.subtask);
-      return;
-    }
+    if (!hasDraggableDataTask(event.active)) return;
+    // const data = event.active.data.current;
   }
 
   function onDragEnd(event: DragOverEvent) {
     const { active, over } = event;
-    setActiveTask(null);
     if (!over) return;
 
     const activeId = active.id;
@@ -2671,24 +1944,34 @@ function KanbanSubTasks({ sub_tasks, task, date, active_task }) {
 
     if (activeId === overId) return;
 
-    if (!hasDraggableData(active) || !hasDraggableData(over)) return;
+    if (!hasDraggableDataTask(active) || !hasDraggableDataTask(over)) return;
 
     const activeData = active.data.current;
+    const overData = over.data.current;
 
     const isActiveATask = activeData?.type === "Task";
+    const isOverATask = overData?.type === "Task";
 
     if (!isActiveATask) return;
 
-    function setter(sub_tasks: Task[]) {
-      const activeIndex = sub_tasks.findIndex((t) => t.id === activeId);
-      const overIndex = sub_tasks.findIndex((t) => t.id === overId);
-
-      return arrayMove(sub_tasks, activeIndex, overIndex);
-    }
-    const updatedTasks = setter(sub_tasks);
-    setSubtasks(updatedTasks);
-
     // Im dropping a Task over another Task
+    if (isActiveATask && isOverATask) {
+      function setter(sub_tasks: Task[]) {
+        const activeIndex = sub_tasks.findIndex((t) => t.id === activeId);
+        const overIndex = sub_tasks.findIndex((t) => t.id === overId);
+
+        return arrayMove(sub_tasks, activeIndex, overIndex);
+      }
+      const updatedTasks = setter(sub_tasks);
+      setSubtasks(updatedTasks);
+      // dispatch(
+      //   updateSubTasksColumn({
+      //     id: task.id,
+      //     key: date.timestamp,
+      //     updated_sub_task: updatedTasks,
+      //   }),
+      // );
+    }
   }
 }
 
@@ -2708,12 +1991,11 @@ function BoardColumnTask({ tasks, date, active_task }: BoardColumnTaskProps) {
 
   return (
     <SortableContext items={tasksIds}>
-      {tasks.map((task, index) => {
+      {tasks.map((task) => {
         return (
           <MainTaskCard
             key={task.id}
             date={date}
-            index={index}
             active_task={active_task}
             task={task}
           />
@@ -2762,7 +2044,7 @@ export interface TaskDragData {
 }
 
 const MainTaskCard = React.memo(
-  ({ index, date, active_task, task }: MainTaskCardProps) => {
+  ({ date, active_task, task }: MainTaskCardProps) => {
     const {
       setNodeRef,
       attributes,
@@ -2806,12 +2088,7 @@ const MainTaskCard = React.memo(
           }),
         )}
       >
-        <ChildTask
-          index={index}
-          date={date}
-          active_task={active_task}
-          task={task}
-        >
+        <ChildTask date={date} active_task={active_task} task={task}>
           <Button
             variant={"link"}
             {...attributes}
@@ -2836,7 +2113,7 @@ const MainTaskCard = React.memo(
 );
 
 const ChildTask = React.memo(
-  ({ index, date, active_task, task, children }: MainTaskCardProps) => {
+  ({ date, active_task, task, children }: MainTaskCardProps) => {
     const todo = task;
 
     const totalSessionTime = todo.sessions.reduce(
@@ -2853,9 +2130,9 @@ const ChildTask = React.memo(
         defaultOpen={false}
       >
         <div
-          style={{ animationDelay: `${index * 0.07}s` }}
+          style={{ animationDelay: `${0.03}s` }}
           className={cn(
-            "animate-roll-reveal [animation-fill-mode:backwards] p-2 relative flex items-start overflow-hidden dark:bg-gradient-to-l dark:from-gray-950/80 dark:to-gray-800 py-2 mb-2 bg-gray-50 rounded-lg shadow-md",
+            "animate-roll-reveal [animation-fill-mode:backwards] relative flex items-start overflow-hidden dark:bg-gradient-to-l dark:from-gray-950/80 dark:to-gray-800 py-2 mb-2 bg-gray-50 rounded-lg border shadow",
             active_task && todo.status !== "progress"
               ? "bg-white text-muted-foreground opacity-60"
               : active_task && todo.status === "progress"
@@ -3122,7 +2399,15 @@ const ChildTask = React.memo(
                     <DropdownMenuLabel>Actions</DropdownMenuLabel>
                     <DropdownMenuGroup>
                       <DropdownMenuItem
-                        onClick={() => dispatch(addSubTask({ id: todo.id }))}
+                        onClick={() =>
+                          dispatch(
+                            addSubTask({
+                              id: todo.id,
+
+                              key: date.timestamp,
+                            }),
+                          )
+                        }
                       >
                         <Plus /> Add Subtask
                       </DropdownMenuItem>
@@ -3379,7 +2664,7 @@ function SubTaskComponentCard({
       subtask,
     } satisfies TaskDragData,
     attributes: {
-      roleDescription: "Task",
+      roleDescription: "Subtask",
     },
   });
 
@@ -3402,9 +2687,9 @@ function SubTaskComponentCard({
       ref={setNodeRef}
       style={style}
       className={cn(
-        "w-full mb-2 ",
+        "w-full mb-2 animate-slide-top [animation-fill-mode:backwards]",
         variants({
-          dragging: isOverlay ? "overlay" : isDragging ? "over" : undefined,
+          dragging: isDragging ? "over" : undefined,
         }),
       )}
     >
@@ -3435,9 +2720,8 @@ const ChildSubTask = React.memo(
 
     return (
       <div
-        style={{ animationDelay: `${index * 0.07}s` }}
         className={cn(
-          "animate-roll-reveal [animation-fill-mode:backwards] ml-2.5 sm:ml-5 relative flex items-start overflow-hidden dark:bg-gradient-to-l dark:from-gray-950/80 dark:to-gray-800 bg-gray-50 rounded-lg py-2 mb-1.5 shadow-md",
+          "ml-2.5 sm:ml-5 relative flex items-start overflow-hidden dark:bg-gradient-to-l dark:from-gray-950/80 dark:to-gray-800 bg-gray-50 rounded-lg py-2 mb-1.5 shadow-md",
           active_task && todo.status !== "progress"
             ? "bg-white/40 text-muted-foreground opacity-80"
             : active_task && todo.status === "progress"
@@ -3506,29 +2790,6 @@ const ChildSubTask = React.memo(
                 );
               }}
             />
-            {/*<AutosizeTextarea
-              defaultValue={subtask.title}
-              key={`sub_tasks[${index}].title`} // Dinamis berdasarkan index
-              name={`sub_tasks[${index}].title`} // Dinamis berdasarkan index
-              id={`sub_tasks[${index}].title`} // Dinamis ber
-              onBlur={(e) => {
-                dispatch(
-                  updateSubTask({
-                    id: task.id,
-                    key: date.timestamp,
-                    sub_task_id: subtask.id,
-                    updated_sub_task: {
-                      title: e.target.value,
-                    },
-                  }),
-                );
-              }}
-              style={{ resize: "none" }}
-              className="w-full bg-transparent p-1 outline-none text-md border-none focus-visible:ring-offset-0 focus-visible:ring-0 outline-none"
-              maxHeight={800}
-              placeholder="Untitled"
-              autoComplete="off"
-            />*/}
             <div className="ml-auto flex items-center gap-2 pr-2 pt-2">
               <div className="">
                 <DropdownMenu>
@@ -3572,12 +2833,12 @@ const ChildSubTask = React.memo(
   },
 );
 
-import { Active, DataRef, Over, DragOverlay } from "@dnd-kit/core";
-type DraggableData = TaskDragData;
-function hasDraggableData<T extends Active | Over>(
+import { Active, DataRef, Over } from "@dnd-kit/core";
+type DraggableDataTask = TaskDragData;
+function hasDraggableDataTask<T extends Active | Over>(
   entry: T | null | undefined,
 ): entry is T & {
-  data: DataRef<DraggableData>;
+  data: DataRef<DraggableDataTask>;
 } {
   if (!entry) {
     return false;
@@ -4302,4 +3563,772 @@ function AppRichTextEditor({ defaultValue, handler }) {
       <RichTextEditor value={defaultValue} onChange={handler} />
     </div>
   );
+}
+
+// import { useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
+
+// import { BoardColumn, BoardContainer } from "./BoardColumn";
+import {
+  // DndContext,
+  // type DragEndEvent,
+  // type DragOverEvent,
+  //   type DragStartEvent,
+  // useSensor,
+  // useSensors,
+  //   TouchSensor,
+  //   MouseSensor,
+  KeyboardSensor,
+  Announcements,
+  UniqueIdentifier,
+  DragOverlay,
+} from "@dnd-kit/core";
+// import { SortableContext, arrayMove } from "@dnd-kit/sortable";
+// import { type Task, MainTaskCard } from "./MainTaskCard";
+// import type { Column } from "./BoardColumn";
+// import { hasDraggableData } from "./utils";
+// import { coordinateGetter } from "./multipleContainersKeyboardPreset";
+
+import { debounce } from "lodash";
+function capitalize(str: string) {
+  return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+}
+
+function KanbanBoard({ tasks: _tasks, date, active_task, defaultCols }) {
+  const uniqueColumns = [...new Set(_tasks.map((item) => item.columnId))].map(
+    (columnId) => ({
+      id: columnId,
+      title: capitalize(columnId), // Capitalize columnId
+    }),
+  );
+
+  const [tasks, setTasks] = useState<Task[]>(_tasks);
+  const [columns, setColumns] = useState<Column[]>(uniqueColumns);
+  const pickedUpTaskColumn = useRef<string | null>(null);
+  const columnsId = useMemo(() => columns.map((col) => col.id), [columns]);
+  const [activeColumn, setActiveColumn] = useState<Column | null>(null);
+
+  const [activeTask, setActiveTask] = useState<Task | null>(null);
+
+  // Sync tasks with _tasks whenever _tasks changes
+  useEffect(() => {
+    setTasks(_tasks);
+  }, [_tasks]); // Dependency on _tasks, so it will update whenever _tasks changes
+
+  const dispatch = useAppDispatch();
+
+  // Debounced function to dispatch the action after a delay
+  const debounceOnChange = debounce(() => {
+    dispatch(updateTasksColumn({ key: date.timestamp, updated_task: tasks }));
+  }, 3000); // Set delay to 3 seconds
+
+  useEffect(() => {
+    debounceOnChange(); // Call the debounced function whenever tasks change
+    // Cleanup the debounce function when the component is unmounted or before next render
+    return () => {
+      debounceOnChange.cancel();
+    };
+  }, [tasks]); // Trigger when tasks change
+
+  const sensors = useSensors(
+    useSensor(MouseSensor),
+    useSensor(TouchSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: coordinateGetter,
+    }),
+  );
+  // Debounce dispatch function untuk update tasks
+
+  function getDraggingTaskData(taskId: UniqueIdentifier, columnId: ColumnId) {
+    const tasksInColumn = tasks.filter((task) => task.columnId === columnId);
+    const taskPosition = tasksInColumn.findIndex((task) => task.id === taskId);
+    const column = columns.find((col) => col.id === columnId);
+    return {
+      tasksInColumn,
+      taskPosition,
+      column,
+    };
+  }
+
+  const announcements: Announcements = {
+    onDragStart({ active }) {
+      if (!hasDraggableData(active)) return;
+      if (active.data.current?.type === "Column") {
+        const startColumnIdx = columnsId.findIndex((id) => id === active.id);
+        const startColumn = columns[startColumnIdx];
+        return `Picked up Column ${startColumn?.title} at position: ${
+          startColumnIdx + 1
+        } of ${columnsId.length}`;
+      } else if (active.data.current?.type === "Task") {
+        pickedUpTaskColumn.current = active.data.current.task.columnId;
+        const { tasksInColumn, taskPosition, column } = getDraggingTaskData(
+          active.id,
+          pickedUpTaskColumn.current,
+        );
+        return `Picked up Task ${
+          active.data.current.task.content
+        } at position: ${taskPosition + 1} of ${
+          tasksInColumn.length
+        } in column ${column?.title}`;
+      }
+    },
+    onDragOver({ active, over }) {
+      if (!hasDraggableData(active) || !hasDraggableData(over)) return;
+
+      if (
+        active.data.current?.type === "Column" &&
+        over.data.current?.type === "Column"
+      ) {
+        const overColumnIdx = columnsId.findIndex((id) => id === over.id);
+        return `Column ${active.data.current.column.title} was moved over ${
+          over.data.current.column.title
+        } at position ${overColumnIdx + 1} of ${columnsId.length}`;
+      } else if (
+        active.data.current?.type === "Task" &&
+        over.data.current?.type === "Task"
+      ) {
+        const { tasksInColumn, taskPosition, column } = getDraggingTaskData(
+          over.id,
+          over.data.current.task.columnId,
+        );
+        if (over.data.current.task.columnId !== pickedUpTaskColumn.current) {
+          return `Task ${
+            active.data.current.task.content
+          } was moved over column ${column?.title} in position ${
+            taskPosition + 1
+          } of ${tasksInColumn.length}`;
+        }
+        return `Task was moved over position ${taskPosition + 1} of ${
+          tasksInColumn.length
+        } in column ${column?.title}`;
+      }
+    },
+    onDragEnd({ active, over }) {
+      if (!hasDraggableData(active) || !hasDraggableData(over)) {
+        pickedUpTaskColumn.current = null;
+        return;
+      }
+      if (
+        active.data.current?.type === "Column" &&
+        over.data.current?.type === "Column"
+      ) {
+        const overColumnPosition = columnsId.findIndex((id) => id === over.id);
+
+        return `Column ${
+          active.data.current.column.title
+        } was dropped into position ${overColumnPosition + 1} of ${
+          columnsId.length
+        }`;
+      } else if (
+        active.data.current?.type === "Task" &&
+        over.data.current?.type === "Task"
+      ) {
+        const { tasksInColumn, taskPosition, column } = getDraggingTaskData(
+          over.id,
+          over.data.current.task.columnId,
+        );
+        if (over.data.current.task.columnId !== pickedUpTaskColumn.current) {
+          return `Task was dropped into column ${column?.title} in position ${
+            taskPosition + 1
+          } of ${tasksInColumn.length}`;
+        }
+        return `Task was dropped into position ${taskPosition + 1} of ${
+          tasksInColumn.length
+        } in column ${column?.title}`;
+      }
+      pickedUpTaskColumn.current = null;
+    },
+    onDragCancel({ active }) {
+      pickedUpTaskColumn.current = null;
+      if (!hasDraggableData(active)) return;
+      return `Dragging ${active.data.current?.type} cancelled.`;
+    },
+  };
+
+  return (
+    <React.Fragment>
+      <DndContext
+        accessibility={{
+          announcements,
+        }}
+        sensors={sensors}
+        onDragStart={onDragStart}
+        onDragEnd={onDragEnd}
+        onDragOver={onDragOver}
+      >
+        <BoardContainer>
+          <SortableContext items={columnsId}>
+            {columns.map((col) => (
+              <BoardColumn
+                key={col.id}
+                column={col}
+                tasks={tasks.filter((task) => task.columnId === col.id)}
+                date={date}
+                active_task={active_task}
+                setColumns={setColumns}
+              />
+            ))}
+          </SortableContext>
+        </BoardContainer>
+
+        {"document" in window &&
+          createPortal(
+            <DragOverlay>
+              {activeColumn && (
+                <BoardColumn
+                  isOverlay
+                  column={activeColumn}
+                  date={date}
+                  active_task={active_task}
+                  tasks={tasks.filter(
+                    (task) => task.columnId === activeColumn.id,
+                  )}
+                />
+              )}
+              {activeTask && (
+                <TaskCard
+                  task={activeTask}
+                  date={date}
+                  active_task={active_task}
+                  isOverlay
+                />
+              )}
+            </DragOverlay>,
+            document.body,
+          )}
+      </DndContext>
+      <Button
+        variant="link"
+        onClick={() => {
+          const newTask = {
+            id: generateRandomId(),
+            title: "Untitled",
+          };
+
+          setColumns((colomns) => {
+            const data = [...colomns, newTask];
+            return data;
+          });
+        }}
+      >
+        <Plus /> Add Column
+      </Button>
+    </React.Fragment>
+  );
+
+  function onDragStart(event: DragStartEvent) {
+    if (!hasDraggableData(event.active)) return;
+    const data = event.active.data.current;
+    if (data?.type === "Column") {
+      setActiveColumn(data.column);
+      return;
+    }
+
+    if (data?.type === "Task") {
+      setActiveTask(data.task);
+      return;
+    }
+  }
+
+  function onDragEnd(event: DragEndEvent) {
+    setActiveColumn(null);
+    setActiveTask(null);
+
+    const { active, over } = event;
+    if (!over) return;
+
+    const activeId = active.id;
+    const overId = over.id;
+
+    if (!hasDraggableData(active)) return;
+
+    const activeData = active.data.current;
+
+    if (activeId === overId) return;
+
+    const isActiveAColumn = activeData?.type === "Column";
+    if (!isActiveAColumn) return;
+
+    setColumns((columns) => {
+      const activeColumnIndex = columns.findIndex((col) => col.id === activeId);
+
+      const overColumnIndex = columns.findIndex((col) => col.id === overId);
+
+      return arrayMove(columns, activeColumnIndex, overColumnIndex);
+    });
+  }
+
+  function onDragOver(event: DragOverEvent) {
+    const { active, over } = event;
+    if (!over) return;
+
+    const activeId = active.id;
+    const overId = over.id;
+
+    if (activeId === overId) return;
+
+    if (!hasDraggableData(active) || !hasDraggableData(over)) return;
+
+    const activeData = active.data.current;
+    const overData = over.data.current;
+
+    const isActiveATask = activeData?.type === "Task";
+    const isOverATask = overData?.type === "Task";
+
+    if (!isActiveATask) return;
+
+    // Im dropping a Task over another Task
+    if (isActiveATask && isOverATask) {
+      setTasks((tasks) => {
+        const activeIndex = tasks.findIndex((t) => t.id === activeId);
+        const overIndex = tasks.findIndex((t) => t.id === overId);
+
+        if (activeIndex === -1 || overIndex === -1) return tasks; // Handle case when activeId or overId not found
+
+        const updatedTasks = [...tasks]; // Create a shallow copy of tasks
+
+        const activeTask = updatedTasks[activeIndex];
+        const overTask = updatedTasks[overIndex];
+
+        if (
+          activeTask &&
+          overTask &&
+          activeTask.columnId !== overTask.columnId
+        ) {
+          updatedTasks[activeIndex] = {
+            ...activeTask,
+            columnId: overTask.columnId,
+          }; // Update columnId of active task
+          return arrayMove(updatedTasks, activeIndex, overIndex - 1);
+        }
+
+        return arrayMove(updatedTasks, activeIndex, overIndex);
+      });
+    }
+
+    const isOverAColumn = overData?.type === "Column";
+
+    // Im dropping a Task over a column
+    if (isActiveATask && isOverAColumn) {
+      setTasks((tasks) => {
+        const activeIndex = tasks.findIndex((t) => t.id === activeId);
+        if (activeIndex === -1) return tasks; // Handle case when activeId not found
+
+        const updatedTasks = [...tasks]; // Create a shallow copy of tasks
+        const activeTask = updatedTasks[activeIndex];
+
+        if (activeTask) {
+          updatedTasks[activeIndex] = { ...activeTask, columnId: overId }; // Update columnId of active task
+          return updatedTasks; // No need to change index, just update columnId
+        }
+
+        return tasks;
+      });
+    }
+  }
+}
+
+// import { SortableContext, useSortable } from "@dnd-kit/sortable";
+import { useDndContext } from "@dnd-kit/core";
+// import { CSS } from "@dnd-kit/utilities";
+// import { useMemo } from "react";
+// import { Task, MainTaskCard } from "./MainTaskCard";
+// import { cva } from "class-variance-authority";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+// import { Button } from "@/components/ui/button";
+// import { GripVertical } from "lucide-react";
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
+//
+export interface Column {
+  id: UniqueIdentifier;
+  title: string;
+}
+
+export type ColumnType = "Column";
+
+export interface ColumnDragData {
+  type: ColumnType;
+  column: Column;
+}
+
+interface BoardColumnProps {
+  column: Column;
+  tasks: Task[];
+  isOverlay?: boolean;
+}
+
+function BoardColumn({
+  column,
+  tasks,
+  isOverlay,
+  date,
+  active_task,
+  setColumns,
+}: BoardColumnProps) {
+  const tasksIds = useMemo(() => {
+    return tasks.map((task) => task.id);
+  }, [tasks]);
+
+  const {
+    setNodeRef,
+    attributes,
+    listeners,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({
+    id: column.id,
+    data: {
+      type: "Column",
+      column,
+    } satisfies ColumnDragData,
+    attributes: {
+      roleDescription: `Column: ${column.title}`,
+    },
+  });
+
+  const style = {
+    transition,
+    transform: CSS.Translate.toString(transform),
+  };
+
+  const variants = cva(
+    "max-h-[70vh] min-h-[23vh] w-full max-w-[375px] bg-transparent flex flex-col flex-shrink-0 snap-center",
+    {
+      variants: {
+        dragging: {
+          default: "",
+          over: "opacity-30",
+          overlay: "",
+        },
+      },
+    },
+  );
+
+  const editCard = (id, title) => {
+    setColumns((columns) => {
+      const data = [...columns]; // Membuat salinan dari columns
+      const findIndex = data.findIndex((d) => d.id === id);
+
+      if (findIndex !== -1) {
+        // Membuat salinan objek untuk menghindari mutasi langsung
+        data[findIndex] = {
+          ...data[findIndex],
+          title, // title yang baru
+        };
+
+        return data; // Mengembalikan salinan array yang sudah dimodifikasi
+      }
+
+      return data; // Mengembalikan data yang tidak berubah jika id tidak ditemukan
+    });
+  };
+
+  // Fungsi untuk generate ID dari title
+  const generateIdFromTitle = (title: string): string => {
+    return title
+      .toLowerCase() // Ubah semua huruf menjadi kecil
+      .replace(/\s+/g, "-") // Ganti spasi dengan tanda hubung
+      .replace(/[^a-z0-9-]/g, ""); // Hapus karakter selain huruf dan angka
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={variants({
+        dragging: isOverlay ? "overlay" : isDragging ? "over" : undefined,
+      })}
+    >
+      {/*<div className="group mb-5 grid  w-full items-center gap-2 rounded-lg bg-gradient-to-l from-white/50 to-white p-2 dark:from-gray-800 dark:to-gray-950">*/}
+      <div className="mb-10 w-full rounded-lg border-t-4 bg-gradient-to-t px-5 pb-10 pt-2 dark:via-dark-900/20 border-green-200 from-transparent via-green-50 to-green-100 dark:border-green-900 dark:from-transparent dark:to-gray-950/80">
+        <div className="flex items-center">
+          <Button
+            variant={"ghost"}
+            {...attributes}
+            {...listeners}
+            className=" p-1 text-primary/50 -ml-2 h-auto cursor-grab relative"
+          >
+            <span className="sr-only">{`Move column: ${column.title}`}</span>
+            <GripVertical />
+          </Button>
+          <input
+            className="ml-auto w-full outline-none bg-transparent"
+            type="text"
+            defaultValue={column.title}
+            onBlur={(e) => {
+              editCard(column.id, e.target.value);
+            }}
+          />
+          <Button size="icon" variant="link">
+            <Trash2 className="w-4 h-4" />
+          </Button>
+        </div>
+        <SortableContext items={tasksIds}>
+          {tasks.map((task) => (
+            <TaskCard
+              key={task.id}
+              task={task}
+              date={date}
+              active_task={active_task}
+            />
+          ))}
+        </SortableContext>
+      </div>
+    </div>
+  );
+}
+
+function BoardContainer({ children }: { children: React.ReactNode }) {
+  const dndContext = useDndContext();
+
+  const variations = cva("px-2 md:px-0 flex lg:justify-center pb-4 mt-5", {
+    variants: {
+      dragging: {
+        default: "snap-x snap-mandatory",
+        active: "snap-none",
+      },
+    },
+  });
+
+  return (
+    <ScrollArea
+      className={variations({
+        dragging: dndContext.active ? "active" : "default",
+      })}
+    >
+      <div className="flex flex-wrap gap-4 items-start flex-row justify-start">
+        {children}
+      </div>
+      <ScrollBar orientation="horizontal" />
+    </ScrollArea>
+  );
+}
+
+import {
+  closestCorners,
+  getFirstCollision,
+  KeyboardCode,
+  DroppableContainer,
+  KeyboardCoordinateGetter,
+} from "@dnd-kit/core";
+
+const directions: string[] = [
+  KeyboardCode.Down,
+  KeyboardCode.Right,
+  KeyboardCode.Up,
+  KeyboardCode.Left,
+];
+
+const coordinateGetter: KeyboardCoordinateGetter = (
+  event,
+  { context: { active, droppableRects, droppableContainers, collisionRect } },
+) => {
+  if (directions.includes(event.code)) {
+    event.preventDefault();
+
+    if (!active || !collisionRect) {
+      return;
+    }
+
+    const filteredContainers: DroppableContainer[] = [];
+
+    droppableContainers.getEnabled().forEach((entry) => {
+      if (!entry || entry?.disabled) {
+        return;
+      }
+
+      const rect = droppableRects.get(entry.id);
+
+      if (!rect) {
+        return;
+      }
+
+      const data = entry.data.current;
+
+      if (data) {
+        const { type, children } = data;
+
+        if (type === "Column" && children?.length > 0) {
+          if (active.data.current?.type !== "Column") {
+            return;
+          }
+        }
+      }
+
+      switch (event.code) {
+        case KeyboardCode.Down:
+          if (active.data.current?.type === "Column") {
+            return;
+          }
+          if (collisionRect.top < rect.top) {
+            // find all droppable areas below
+            filteredContainers.push(entry);
+          }
+          break;
+        case KeyboardCode.Up:
+          if (active.data.current?.type === "Column") {
+            return;
+          }
+          if (collisionRect.top > rect.top) {
+            // find all droppable areas above
+            filteredContainers.push(entry);
+          }
+          break;
+        case KeyboardCode.Left:
+          if (collisionRect.left >= rect.left + rect.width) {
+            // find all droppable areas to left
+            filteredContainers.push(entry);
+          }
+          break;
+        case KeyboardCode.Right:
+          // find all droppable areas to right
+          if (collisionRect.left + collisionRect.width <= rect.left) {
+            filteredContainers.push(entry);
+          }
+          break;
+      }
+    });
+    const collisions = closestCorners({
+      active,
+      collisionRect: collisionRect,
+      droppableRects,
+      droppableContainers: filteredContainers,
+      pointerCoordinates: null,
+    });
+    const closestId = getFirstCollision(collisions, "id");
+
+    if (closestId != null) {
+      const newDroppable = droppableContainers.get(closestId);
+      const newNode = newDroppable?.node.current;
+      const newRect = newDroppable?.rect.current;
+
+      if (newNode && newRect) {
+        return {
+          x: newRect.left,
+          y: newRect.top,
+        };
+      }
+    }
+  }
+
+  return undefined;
+};
+
+// import { Active, DataRef, Over } from "@dnd-kit/core";
+
+type DraggableData = ColumnDragData | TaskDragData;
+
+function hasDraggableData<T extends Active | Over>(
+  entry: T | null | undefined,
+): entry is T & {
+  data: DataRef<DraggableData>;
+} {
+  if (!entry) {
+    return false;
+  }
+
+  const data = entry.data.current;
+
+  if (data?.type === "Column" || data?.type === "Task") {
+    return true;
+  }
+
+  return false;
+}
+
+// import type { UniqueIdentifier } from "@dnd-kit/core";
+// import { useSortable } from "@dnd-kit/sortable";
+// import { CSS } from "@dnd-kit/utilities";
+// import { Card, CardContent, CardHeader } from "@/components/ui/card";
+// import { Button } from "@/components/ui/button";
+// import { cva } from "class-variance-authority";
+// import { GripVertical } from "lucide-react";
+// import { Badge } from "@/components/ui/badge";
+// import { ColumnId } from "./KanbanBoard";
+
+interface TaskCardType {
+  id: UniqueIdentifier;
+  columnId: ColumnId;
+  content: string;
+}
+
+interface TaskCardProps {
+  task: TaskCardType;
+  isOverlay?: boolean;
+}
+
+// export type TaskType = "Task";
+
+export interface TaskDragData {
+  type: TaskType;
+  task: Task;
+}
+
+function TaskCard({ task, isOverlay, date, active_task }: TaskCardProps) {
+  const {
+    setNodeRef,
+    attributes,
+    listeners,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({
+    id: task.id,
+    data: {
+      type: "Task",
+      task,
+    } satisfies TaskDragData,
+    attributes: {
+      roleDescription: "Task",
+    },
+  });
+
+  const style = {
+    transition,
+    transform: CSS.Translate.toString(transform),
+  };
+
+  const variants = cva("", {
+    variants: {
+      dragging: {
+        over: "opacity-30",
+        overlay: "",
+      },
+    },
+  });
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={variants({
+        dragging: isOverlay ? "overlay" : isDragging ? "over" : undefined,
+      })}
+    >
+      <ChildTask date={date} active_task={active_task} task={task}>
+        <Button
+          variant={"ghost"}
+          {...attributes}
+          {...listeners}
+          className="p-1 text-secondary-foreground/50 -ml-2 h-auto cursor-grab"
+        >
+          <span className="sr-only">Move task</span>
+          <GripVertical />
+        </Button>
+      </ChildTask>
+    </div>
+  );
+}
+
+function generateRandomId() {
+  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, function (c) {
+    var r = (Math.random() * 16) | 0,
+      v = c === "x" ? r : (r & 0x3) | 0x8;
+    return v.toString(16);
+  });
+}
+interface Taskx {
+  id: string;
+  title: string;
 }

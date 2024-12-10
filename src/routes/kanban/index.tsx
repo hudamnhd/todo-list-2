@@ -36,9 +36,6 @@ function App() {
           <KanbanBoard />
         </main>
       </div>
-      <div className="w-full">
-        <AppRichTextEditor />
-      </div>
     </>
   );
 }

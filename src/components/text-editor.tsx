@@ -35,7 +35,7 @@ const RichTextEditor = ({
     editorProps: {
       attributes: {
         class:
-          "min-h-[40px] max-h-[150px] w-full bg-transparent py-1 px-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50 overflow-auto",
+          "min-h-[60px] max-h-[150px] w-full bg-transparent py-1 px-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50 overflow-auto",
       },
     },
     immediatelyRender: true,
@@ -48,11 +48,6 @@ const RichTextEditor = ({
         italic: {
           HTMLAttributes: {
             class: "italic",
-          },
-        },
-        code: {
-          HTMLAttributes: {
-            class: "p-2 rounded-md bg-foreground text-background",
           },
         },
         orderedList: {
@@ -104,7 +99,7 @@ const RichTextEditor = ({
     <>
       {editor && (
         <BubbleMenu
-          className="z-50"
+          className=""
           tippyOptions={{ duration: 100 }}
           editor={editor}
         >
@@ -155,7 +150,7 @@ const RichTextEditor = ({
             </Toggle>
 
             <Separator orientation="vertical" className="w-[1px] h-8" />
-            <Toggle
+            {/*<Toggle
               size="sm"
               pressed={editor.isActive("heading", { level: 1 })}
               onPressedChange={() =>
@@ -163,7 +158,7 @@ const RichTextEditor = ({
               }
             >
               <Heading1 className="h-4 w-4" />
-            </Toggle>
+            </Toggle>*/}
             <Toggle
               size="sm"
               pressed={editor.isActive("heading", { level: 2 })}
@@ -174,13 +169,6 @@ const RichTextEditor = ({
               <Heading2 className="h-4 w-4" />
             </Toggle>
             <Separator orientation="vertical" className="w-[1px] h-8" />
-            <Toggle
-              size="sm"
-              pressed={editor.isActive("code")}
-              onPressedChange={() => editor.chain().focus().toggleCode().run()}
-            >
-              <Code />
-            </Toggle>
             <Toggle
               size="sm"
               pressed={editor.isActive("undo")}
@@ -195,16 +183,6 @@ const RichTextEditor = ({
             >
               <Redo />
             </Toggle>
-            <button
-              onClick={() => editor.chain().focus().setColor("#958DF1").run()}
-              className={
-                editor.isActive("textStyle", { color: "#958DF1" })
-                  ? "is-active"
-                  : ""
-              }
-            >
-              Purple
-            </button>
           </div>
         </BubbleMenu>
       )}
