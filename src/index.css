@@ -212,3 +212,13 @@ input::-webkit-inner-spin-button {
   @apply pointer-events-none;
   @apply h-0;
 }
+
+@font-face {
+  font-family: "LPMQ IsepMisbah";
+  src: local("LPMQ IsepMisbah"), url("/fonts/LPMQ-IsepMisbah.ttf")
+    format("truetype");
+}
+
+.font-lpmq {
+  font-family: "LPMQ IsepMisbah";
+}

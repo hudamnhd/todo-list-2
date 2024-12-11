@@ -249,6 +249,27 @@ async function save_data_daily_tasks(data) {
   set_cache("daily-tasks", data);
 }
 
+function Bismillah() {
+  const [quran, setQuran] = React.useState("");
+
+  async function get_data() {
+    const res = await fetch("/quran/surah/112.json");
+    const data = await res.json();
+    setQuran(data.bismillah.arab);
+    return data;
+  }
+
+  React.useEffect(() => {
+    get_data();
+  }, []);
+
+  return (
+    <div className="font-lpmq text-2xl sm:text-3xl text-center w-full mx-auto my-2 ">
+      {quran}
+    </div>
+  );
+}
+
 const TodoNavigator = ({ data }) => {
   const [day_timestamp, set_day_timestamp] = useState<number | undefined>();
   const date_key = get_formatted_date(day_timestamp);
@@ -777,7 +798,9 @@ const TaskApp = ({
         </div>
       </section>
 
+      <Bismillah />
       <TodoTimer todos={todos} date={date} active_task={active_task} />
+
       <div>
         <div
           style={{ animationDelay: `0.1s` }}
@@ -1027,7 +1050,7 @@ const TodoTimer = ({
   }, [active_task]); // Make sure the effect reruns when active_task changes
 
   return (
-    <div className="flex items-start justify-between gap-x-3 pt-4 px-4 md:gap-x-5 mt-2 h-[130px]">
+    <div className="flex items-start justify-between gap-x-3 pt-2 px-4 md:gap-x-5 h-[130px]">
       <div className="flex items-start gap-6 md:gap-8">
         <div
           style={{ animationDelay: `0.05s` }}

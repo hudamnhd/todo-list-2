@@ -33,17 +33,32 @@ function App() {
           <h1 className="scroll-m-20 text-4xl font-extrabold tracking-tight lg:text-5xl">
             Drag and Drop Kanban Board
           </h1>
+          <AppRichTextEditor />
           <KanbanBoard />
         </main>
       </div>
     </>
   );
 }
+
 function AppRichTextEditor() {
   const [value, setValue] = React.useState("Example tiptap");
+  const [quran, setQuran] = React.useState("");
+  async function get_data() {
+    const res = await fetch("/quran/surah/112.json");
+    const data = await res.json();
+    setQuran(data.bismillah.arab);
+    return data;
+  }
+
+  React.useEffect(() => {
+    get_data();
+  }, []);
+
   return (
-    <div className="max-w-6xl mx-auto">
-      <RichTextEditor value={value} onChange={setValue} />
+    <div className="max-w-6xl mx-auto my-2">
+      {/*<img src="https://media.qurankemenag.net/khat2/QK_001.webp" />*/}
+      <div className="font-lpmq text-5xl">{quran}</div>
     </div>
   );
 }
