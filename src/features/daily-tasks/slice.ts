@@ -34,14 +34,11 @@ const todoReducer = (
         status: "draft",
         title: "",
         category: { label: "General", color: "#9ca3af" },
-        start_at: null,
-        total_time: 0,
         target_sessions: 0,
-        completed_sessions: 0,
-        end_at: null,
+        done: null,
         sessions: [],
         sub_tasks: [],
-        created_at: new Date().toISOString(),
+        created_at: Date.now(),
         updated_at: null,
       };
 
@@ -84,12 +81,9 @@ const todoReducer = (
             id: Date.now(),
             status: "draft" as "draft",
             start_at: null,
-            total_time: 0,
-            completed_sessions: 0,
-            end_at: null,
             sessions: [],
             sub_tasks,
-            created_at: new Date().toISOString(),
+            created_at: Date.now(),
             updated_at: null,
           };
 
@@ -136,7 +130,7 @@ const todoReducer = (
           const updatedTask = {
             ...original_data,
             sub_tasks: [...oldSubTasks, payload],
-            updated_at: new Date().toISOString(),
+            updated_at: Date.now(),
           };
 
           // Update tasks dengan data baru
@@ -176,7 +170,7 @@ const todoReducer = (
           const updatedTask = {
             ...task,
             sub_tasks: filteredSubTasks,
-            updated_at: new Date().toISOString(),
+            updated_at: Date.now(),
           };
 
           return {
@@ -218,7 +212,7 @@ const todoReducer = (
           const updatedTask = {
             ...task,
             sub_tasks: updatedSubTasks,
-            updated_at: new Date().toISOString(),
+            updated_at: Date.now(),
           };
 
           return {
@@ -241,6 +235,11 @@ const todoReducer = (
       const { id, updated_session_task } = action.payload;
       const date_key = get_formatted_date(action.payload?.key);
       const formatted_date = date_key.key;
+      const payload = {
+        id: Date.now(),
+        elapsed_time: 0,
+        log: [{ time: Date.now(), name: "start" }],
+      };
 
       if (state.tasks[formatted_date]) {
         const taskIndex = state.tasks[formatted_date].findIndex(
@@ -249,26 +248,51 @@ const todoReducer = (
 
         if (taskIndex !== -1) {
           const task = state.tasks[formatted_date][taskIndex];
+          const sessions_length = task.sessions.length > 0;
 
-          const updatedSubTasks = [
-            ...task.sessions, // Spread the old sessions to create a new array
-            ...updated_session_task.filter(
-              (newSession) =>
-                !task.sessions.some(
-                  (existingSession) =>
-                    existingSession.date === newSession.date &&
-                    existingSession.time === newSession.time,
-                ),
-            ), // Only add new sessions that are not already in the task.sessions
-          ];
+          const status = sessions_length
+            ? updated_session_task?.log?.length > 0 // Pastikan log tidak kosong
+              ? updated_session_task?.log[updated_session_task?.log.length - 1]
+                  ?.name // Ambil nama status jika ada
+              : "start" // Jika log kosong, status adalah "start"
+            : "start"; // Jika sessions_length falsy, status adalah "start"
+
+          const compare_status =
+            sessions_length &&
+            updated_session_task?.log?.length > 1 && // Pastikan log memiliki lebih dari 1 item
+            updated_session_task?.log[updated_session_task?.log.length - 1]
+              ?.name ===
+              updated_session_task?.log[updated_session_task?.log.length - 2]
+                ?.name; // Bandingkan nama status log terakhir dan kedua terakhir
+
+          if (compare_status) return state;
+
+          const updatedSubTasks = task.sessions.some(
+            (s) => s.id === updated_session_task.id,
+          )
+            ? task.sessions.map((s) =>
+                s.id === updated_session_task.id
+                  ? {
+                      ...s,
+                      ...updated_session_task,
+                    } // Update session yang ID-nya cocok
+                  : s,
+              )
+            : [...task.sessions, payload]; // Jika ID tidak ditemukan, tambahkan payload ke sessions
+
+          const change_status = updated_session_task?.done
+            ? "draft"
+            : status === "start"
+              ? "progress"
+              : status === "pause"
+                ? "paused"
+                : "draft";
 
           const updatedTask = {
             ...task, // Spread the task object to create a new object
             sessions: updatedSubTasks, // Set the new sessions array
-            status: "draft" as "draft",
-            total_time: 0,
-            start_at: null,
-            updated_at: new Date().toISOString(),
+            status: change_status,
+            updated_at: Date.now(),
           };
 
           // Ensure we create a new tasks array, modifying only the task that was updated
@@ -311,7 +335,7 @@ const todoReducer = (
           ...taskToUpdate,
           ...action.payload.updated_task, // Data yang ingin diupdate dari payload
           sessions: [...taskToUpdate.sessions, ...new_session],
-          updated_at: new Date().toISOString(),
+          updated_at: Date.now(),
         };
 
         // Buat array baru dengan task yang sudah diperbarui

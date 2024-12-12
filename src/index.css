@@ -205,3 +205,20 @@ input::-webkit-inner-spin-button {
 ::-webkit-scrollbar-thumb:hover {
   background: #bbbbbb;
 }
+.tiptap .is-empty::before {
+  @apply text-muted-foreground;
+  @apply content-[attr(data-placeholder)];
+  @apply float-left;
+  @apply pointer-events-none;
+  @apply h-0;
+}
+
+@font-face {
+  font-family: "LPMQ IsepMisbah";
+  src: local("LPMQ IsepMisbah"), url("/fonts/LPMQ-IsepMisbah.ttf")
+    format("truetype");
+}
+
+.font-lpmq {
+  font-family: "LPMQ IsepMisbah";
+}
