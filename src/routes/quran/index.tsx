@@ -5,6 +5,7 @@ import {
   useLoaderData,
   useParams,
   useNavigate,
+  useNavigation,
   Outlet,
   NavLink,
   json,
@@ -12,7 +13,8 @@ import {
 import React, { useState, useEffect, useMemo } from "react";
 import ThemeSwitch from "@/components/custom/theme-switch";
 import DAFTARSURATJSON from "/public/quran/daftar-surat.json";
-import { Search, Heart, Ellipsis, Pin } from "lucide-react";
+import SHOLAWAT from "/public/data/sholawat.json";
+import { Search, Heart, Ellipsis, Bookmark } from "lucide-react";
 
 export const loaderSuratId = async ({ params }) => {
   const res = await fetch(`/quran/surat/${params.id}.json`);
@@ -64,8 +66,8 @@ function SuratInfo() {
   return (
     <div className=" text-center flex items-center justify-center bg-background mb-3">
       <Collapsible>
-        <CollapsibleTrigger className="text-2xl font-extrabold">
-          {surat_name.surat_name}
+        <CollapsibleTrigger className="text-2xl font-extrabold pt-1">
+          Surat {surat_name.surat_name}
         </CollapsibleTrigger>
         <CollapsibleContent className="data-[state=closed]:animate-accordion-up data-[state=open]:animate-accordion-down transition-all duration-300 space-y-2 text-text font-base mt-1 bg-background">
           <p className="text-lpmq text-md">( {surat_name.surat_text} )</p>
@@ -114,6 +116,8 @@ const AyatListWithFavorites: React.FC<AyatListProps> = ({
   const [favorites, setFavorites] = useState<Array>([]);
   const [lastRead, setLastRead] = useState<number | null>(null);
   const navigate = useNavigate();
+  const navigation = useNavigation();
+  console.warn("DEBUGPRINT[2]: index.tsx:118: navigation=", navigation);
 
   // Ambil semua nomor halaman unik dari data ayat
   const allPageNumbers = Array.from(
@@ -147,7 +151,13 @@ const AyatListWithFavorites: React.FC<AyatListProps> = ({
 
   // Simpan data favorit ke localForage
   useEffect(() => {
-    setCurrentPage(initialPage);
+    const persistedValue = window.localStorage.getItem("page_number");
+    setCurrentPage(
+      persistedValue !== null ? JSON.parse(persistedValue) : initialPage,
+    );
+    if (persistedValue) {
+      window.localStorage.removeItem("page_number");
+    }
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, [initialPage]);
   // Simpan data favorit ke localForage
@@ -220,16 +230,17 @@ const AyatListWithFavorites: React.FC<AyatListProps> = ({
         return (
           <li
             key={ayat.aya_id}
-            style={{ animationDelay: `${index * 0.07}s` }}
-            className={`animate-roll-reveal [animation-fill-mode:backwards] group relative py-5 px-3 sm:px-5 hover:bg-sidebar-accent rounded-md ${
+            style={{ animationDelay: `${index * 0.1}s` }}
+            className={`animate-roll-reveal [animation-fill-mode:backwards] group relative py-5 pr-4 pl-2 sm:px-5 hover:bg-sidebar-accent rounded-md ${
               isLastRead ? "bg-muted" : ""
             }`}
           >
             <div className=" w-full text-right flex gap-x-2.5 items-start justify-end">
-              <div className="flex items-center gap-x-2">
+              <div className="grid gap-1">
+                <Badge className="rounded px-2">{ayat.aya_number}</Badge>
                 <DropdownMenu>
-                  <DropdownMenuTrigger className="group-hover:visible invisible">
-                    <Ellipsis className="w-5 h-5" />
+                  <DropdownMenuTrigger className="group-hover:visible invisible h-auto">
+                    <Ellipsis className="fill-primary w-5 h-5" />
                   </DropdownMenuTrigger>
                   <DropdownMenuContent>
                     <DropdownMenuLabel>Action</DropdownMenuLabel>
@@ -238,31 +249,32 @@ const AyatListWithFavorites: React.FC<AyatListProps> = ({
                       <Heart className="w-4 h-4" /> Favorite
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => handleRead(ayat)}>
-                      <Pin className="w-4 h-4" /> Last read
+                      <Bookmark className="w-4 h-4" /> Last read
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
-                <Badge className="rounded px-2">{ayat.aya_number}</Badge>
               </div>
-              <p className="relative text-2xl mt-2 font-lpmq text-right font-bold leading-[55px]">
+              <p className="relative text-2xl mt-2 font-lpmq text-right leading-[55px]">
                 {ayat.aya_text}
               </p>
             </div>
-            <div className="mt-3">
+            <div className="mt-3 flex items-end justify-end">
               <div
-                className="text-sm text-muted-foreground text-right"
+                className="text-sm text-muted-foreground text-right sm:max-w-[80%] "
                 dangerouslySetInnerHTML={{
                   __html: ayat.translation_aya_text,
                 }}
               />
             </div>
 
-            <div className="flex items-center justify-end gap-x-2">
-              {isFavorite && (
-                <Heart className="fill-destructive text-destructive mt-2 w-5 h-5" />
-              )}
-              {isLastRead && <Pin className="fill-primary w-5 h-5 mt-2" />}
-            </div>
+            {(isLastRead || isFavorite) && (
+              <div className="w-full text-right flex gap-x-2.5 items-center justify-end mt-2">
+                {isLastRead && <Bookmark className="fill-primary w-5 h-5" />}
+                {isFavorite && (
+                  <Heart className="fill-destructive text-destructive w-5 h-5" />
+                )}
+              </div>
+            )}
           </li>
         );
       })}
@@ -389,7 +401,7 @@ export default function Layout() {
           </div>
           <ThemeSwitch />
         </header>
-        <div className="flex flex-1 flex-col gap-4 p-2 sm:p-4">
+        <div className="flex flex-1 flex-col gap-4 sm:p-4">
           <Outlet />
         </div>
       </SidebarInset>
@@ -478,13 +490,18 @@ export const IndexQuranId: React.FC<AyatListProps> = () => {
 
           return (
             <li
-              onClick={() =>
+              onClick={() => {
                 navigate(`/quran/${ayat.sura_id}`, {
                   preventScrollReset: false,
-                })
-              }
+                });
+
+                window.localStorage.setItem(
+                  "page_number",
+                  JSON.stringify(ayat.page_number),
+                );
+              }}
               key={ayat.aya_id}
-              style={{ animationDelay: `${index * 0.07}s` }}
+              style={{ animationDelay: `${index * 0.1}s` }}
               className={`animate-roll-reveal [animation-fill-mode:backwards] group relative py-5 px-3 sm:px-5 hover:bg-sidebar-accent rounded-md ${
                 isLastRead ? "" : ""
               }`}
@@ -502,7 +519,7 @@ export const IndexQuranId: React.FC<AyatListProps> = () => {
                         <Heart className="w-4 h-4" /> Favorite
                       </DropdownMenuItem>
                       <DropdownMenuItem onClick={() => handleRead(ayat)}>
-                        <Pin className="w-4 h-4" /> Last read
+                        <Bookmark className="w-4 h-4" /> Last read
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
@@ -525,7 +542,9 @@ export const IndexQuranId: React.FC<AyatListProps> = () => {
                 {isFavorite && (
                   <Heart className="fill-destructive text-destructive mt-2 w-5 h-5" />
                 )}
-                {isLastRead && <Pin className="fill-primary w-5 h-5 mt-2" />}
+                {isLastRead && (
+                  <Bookmark className="fill-primary w-5 h-5 mt-2" />
+                )}
               </div>
             </li>
           );
@@ -547,8 +566,18 @@ export const IndexQuranId: React.FC<AyatListProps> = () => {
 
           return (
             <li
+              onClick={() => {
+                navigate(`/quran/${ayat.sura_id}`, {
+                  preventScrollReset: false,
+                });
+
+                window.localStorage.setItem(
+                  "page_number",
+                  JSON.stringify(ayat.page_number),
+                );
+              }}
               key={ayat.aya_id}
-              style={{ animationDelay: `${index * 0.07}s` }}
+              style={{ animationDelay: `${index * 0.1}s` }}
               className={`animate-roll-reveal [animation-fill-mode:backwards] group relative py-5 px-3 sm:px-5 hover:bg-sidebar-accent rounded-md ${
                 isLastRead ? "bg-muted" : ""
               }`}
@@ -566,7 +595,7 @@ export const IndexQuranId: React.FC<AyatListProps> = () => {
                         <Heart className="w-4 h-4" /> Favorite
                       </DropdownMenuItem>
                       <DropdownMenuItem onClick={() => handleRead(ayat)}>
-                        <Pin className="w-4 h-4" /> Last read
+                        <Bookmark className="w-4 h-4" /> Last read
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
@@ -589,7 +618,9 @@ export const IndexQuranId: React.FC<AyatListProps> = () => {
                 {isFavorite && (
                   <Heart className="fill-destructive text-destructive mt-2 w-5 h-5" />
                 )}
-                {isLastRead && <Pin className="fill-primary w-5 h-5 mt-2" />}
+                {isLastRead && (
+                  <Bookmark className="fill-primary w-5 h-5 mt-2" />
+                )}
               </div>
             </li>
           );
