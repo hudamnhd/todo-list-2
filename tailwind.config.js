@@ -72,10 +72,10 @@ export default {
         },
         "accordion-down": {
           from: { height: 0 },
-          to: { height: "var(--radix-collapsible-content-height)" },
+          to: { height: "var(--radix-collapsible-content-height -100)" },
         },
         "accordion-up": {
-          from: { height: "var(--radix-collapsible-content-height)" },
+          from: { height: "var(--radix-collapsible-content-height -100)" },
           to: { height: 0 },
         },
         rocket: {
@@ -138,8 +138,8 @@ export default {
         "slide-left": "slide-left 0.3s ease-out",
         "slide-top": "slide-top 0.3s ease-out",
         "slide-bottom": "slide-bottom 0.3s ease-out",
-        "accordion-down": "accordion-down 0.5s ease-out",
-        "accordion-up": "accordion-up 0.5s ease-out",
+        "accordion-down": "accordion-down 0.4s ease-out",
+        "accordion-up": "accordion-up 0.4s ease-out",
       },
     },
   },

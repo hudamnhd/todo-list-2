@@ -81,6 +81,7 @@ import { cn } from "@/lib/utils";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Debug } from "@/components/debug";
 import { ChevronLeftIcon, ChevronRightIcon } from "@radix-ui/react-icons";
+import QUOTES from "/public/data/quotes-islami.json";
 
 const generateTodo = (date) => {
   const numSessions = faker.number.int({ min: 1, max: 5 }); // Jumlah sesi per todo
@@ -249,6 +250,18 @@ async function save_data_daily_tasks(data) {
   set_cache("daily-tasks", data);
 }
 
+interface Quote {
+  id: string;
+  arabic: string;
+  arti: string;
+}
+
+// Fungsi untuk memilih quote secara acak
+function getRandomQuote(): Quote {
+  const randomIndex = Math.floor(Math.random() * QUOTES.length);
+  return QUOTES[randomIndex];
+}
+
 function Bismillah() {
   const [quran, setQuran] = React.useState("");
 
@@ -264,10 +277,41 @@ function Bismillah() {
   }, []);
 
   return (
-    <div className="font-lpmq text-2xl sm:text-3xl text-center w-full mx-auto my-2 ">
+    <div className="font-lpmq text-2xl sm:flex hidden text-center justify-center">
       {quran}
     </div>
   );
+}
+
+function Quotes() {
+  const [quote, setQuote] = React.useState(null);
+
+  React.useEffect(() => {
+    setQuote(getRandomQuote());
+    const intervalId = setInterval(() => {
+      const randomQuote = getRandomQuote();
+      setQuote(randomQuote);
+    }, 60000); // 60000 ms = 1 menit
+
+    // Cleanup: Menghentikan interval saat komponen di-unmount
+    return () => {
+      clearInterval(intervalId);
+    };
+  }, []);
+
+  if (quote)
+    return (
+      <div>
+        <blockquote className="my-3">
+          <div className="font-lpmq text-2xl text-center w-full mx-auto my-2 ">
+            {quote.arabic}
+          </div>
+          <p className="text-muted-foreground italic leading-relaxed text-center">
+            {quote.arti}
+          </p>
+        </blockquote>
+      </div>
+    );
 }
 
 const TodoNavigator = ({ data }) => {
@@ -757,7 +801,8 @@ const TaskApp = ({
         <h1 className="bg-gradient-to-r from-blue-500 via-green-500 to-orange-500 inline-block text-transparent bg-clip-text uppercase text-xl my-2 font-sans font-bold">
           MHDA
         </h1>
-        <div className="ml-auto flex items-center gap-2">
+
+        <div className="flex-none flex items-center gap-2">
           <Popover>
             <PopoverTrigger className="flex items-center rounded-lg bg-orange-400 p-2 text-orange-100 transition-all duration-500 ease-in-out text-sm">
               <Flame />
@@ -2541,6 +2586,7 @@ function KanbanBoardTasks({ tasks: _tasks, date, active_task }) {
         </DndContext>
       ) : (
         <div className="">
+          <Quotes />
           <p className="text-center text-gray-600 leading-relaxed flex gap-x-2 items-center justify-center">
             {value !== "all" && (
               <span className="flex gap-x-2">
@@ -3460,7 +3506,7 @@ const ChildSubTask = React.memo(
       <div
         style={{ animationDelay: `${index * 0.07}s` }}
         className={cn(
-          "animate-roll-reveal [animation-fill-mode:backwards] ml-2.5 sm:ml-5 relative flex items-start overflow-hidden dark:bg-gradient-to-l dark:from-gray-950/80 dark:to-gray-800 bg-gray-50 rounded-lg py-2 mb-1.5 shadow-md",
+          "animate-slide-top [animation-fill-mode:backwards] ml-2.5 sm:ml-5 relative flex items-start overflow-hidden dark:bg-gradient-to-l dark:from-gray-950/80 dark:to-gray-800 bg-gray-50 rounded-lg py-2 mb-1.5 shadow-md",
           active_task && todo.status !== "progress"
             ? "bg-white/40 text-muted-foreground opacity-80"
             : active_task && todo.status === "progress"
