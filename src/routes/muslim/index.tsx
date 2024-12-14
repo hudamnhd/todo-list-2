@@ -336,7 +336,7 @@ function SuratInfo() {
           Surat {surat_name.surat_name}
         </CollapsibleTrigger>
         <CollapsibleContent className="transition-all duration-300 space-y-2 text-text font-base mt-1 bg-background">
-          <p className="font-lpmq text-md"> ( {surat_name.surat_text} )</p>
+          <div className="font-lpmq text-md"> ( {surat_name.surat_text} )</div>
           <h2 className="text-base font-semibold tracking-wide uppercase">
             {surat_name.surat_terjemahan}{" "}
           </h2>
@@ -488,7 +488,6 @@ const AyatListHafalan: React.FC<AyatListProps> = ({
   };
   return (
     <ul role="list" className="">
-      <DisplayTrigger key={currentPage + value} />
       {filteredData.map((ayat, index) => {
         const isFavorite = favorites.some((fav) => fav.aya_id === ayat.aya_id);
         const isLastRead = lastRead?.aya_id === ayat.aya_id;
@@ -505,7 +504,7 @@ const AyatListHafalan: React.FC<AyatListProps> = ({
               <div className="flex items-center relative mt-2 ">
                 {ayat.aya_text && ayat.aya_text.length > 15 ? (
                   <>
-                    <p className="font-lpmq text-right">
+                    <p className="text-2xl font-lpmq text-right">
                       {ayat.aya_text.slice(-15)}
                     </p>
                     <div className="mx-4 flex text-muted-foreground">
@@ -513,12 +512,14 @@ const AyatListHafalan: React.FC<AyatListProps> = ({
                         <Dot key={index} className="h-5" />
                       ))}
                     </div>
-                    <p className="font-lpmq text-right">
+                    <p className="text-2xl font-lpmq text-right">
                       {ayat.aya_text.slice(0, 15)}
                     </p>
                   </>
                 ) : (
-                  <p className="font-lpmq text-right">{ayat.aya_text}</p>
+                  <p className="text-2xl font-lpmq text-right">
+                    {ayat.aya_text}
+                  </p>
                 )}
               </div>
               <Badge className="px-2 font-lpmq">{ayat.aya_number}</Badge>
@@ -1393,175 +1394,160 @@ export const DzikrView = () => {
       <div className="md:flex md:items-center md:justify-between text-center">
         <div className="flex-1 min-w-0 mb-2">
           <h2 className="font-bold leading-7 sm:text-3xl sm:truncate">
-            Dzikir
+            Dzikir {getWaktuSekarang()}
           </h2>
         </div>
       </div>
 
-      <Tabs defaultValue={getWaktuSekarang()}>
-        <TabsList className="flex items-center justify-center w-fit mx-auto">
-          <TabsTrigger value="pagi">
-            <Sun className="w-4 h-4 mr-1" /> Pagi
-          </TabsTrigger>
-          <TabsTrigger value="petang">
-            <Moon className="w-4 h-4 mr-1" /> Petang
-          </TabsTrigger>
-        </TabsList>
-        <TabsContent value="pagi">
-          <ul role="list" className="">
-            {dzikr
-              .filter((d) => d.time === "" || d.time === "pagi")
-              .map((ayat, index) => {
-                const arabicContent = ayat?.arabic
-                  .replace(/@/g, "\n")
-                  .replace(/<p>/g, '<p class="font-lpmq">'); // Menambahkan kelas 'font-lpmq' pada tag <p>
-                const translateContent = ayat?.translated_id
-                  .replace(/@/g, "<br/><br/>")
-                  .replace(/(\.)(\s|$)/g, "$1<br />");
-                return (
-                  <li
-                    key={index}
-                    style={{ animationDelay: `${index * 0.1}s` }}
-                    className={`animate-slide-top [animation-fill-mode:backwards] group relative py-5 px-3 sm:px-5 hover:bg-accent/70 rounded-md `}
-                  >
-                    <div>
-                      <div className="space-y-1 mb-2">
-                        <h4 className="font-medium leading-none">
-                          {ayat.title}
-                        </h4>
-                        <div className="flex items-center gap-x-1 text-sm text-muted-foreground italic">
-                          {ayat?.note && (
-                            <span className="italic">{ayat.note}</span>
-                          )}
+      {getWaktuSekarang() === "pagi" ? (
+        <ul role="list" className="">
+          {dzikr
+            .filter((d) => d.time === "" || d.time === "pagi")
+            .map((ayat, index) => {
+              const arabicContent = ayat?.arabic
+                .replace(/@/g, "\n")
+                .replace(/<p>/g, '<p class="font-lpmq">'); // Menambahkan kelas 'font-lpmq' pada tag <p>
+              const translateContent = ayat?.translated_id
+                .replace(/@/g, "<br/><br/>")
+                .replace(/(\.)(\s|$)/g, "$1<br />");
+              return (
+                <li
+                  key={index}
+                  style={{ animationDelay: `${index * 0.1}s` }}
+                  className={`animate-slide-top [animation-fill-mode:backwards] group relative py-5 px-3 sm:px-5 hover:bg-accent/70 rounded-md `}
+                >
+                  <div>
+                    <div className="space-y-1 mb-2">
+                      <h4 className="font-medium leading-none">{ayat.title}</h4>
+                      <div className="flex items-center gap-x-1 text-sm text-muted-foreground italic">
+                        {ayat?.note && (
+                          <span className="italic">{ayat.note}</span>
+                        )}
 
-                          {ayat.time !== "" && "Setiap "}
-                          {ayat.time === "pagi" ? (
+                        {ayat.time !== "" && "Setiap "}
+                        {ayat.time === "pagi" ? (
+                          <span className="flex items-center gap-x-1.5 text-sm">
+                            <span className="italic">Pagi</span>
+                            <Sun className="w-4 h-4 rotate-0 transition-all" />
+                          </span>
+                        ) : (
+                          ayat.time === "petang" && (
                             <span className="flex items-center gap-x-1.5 text-sm">
-                              <span className="italic">Pagi</span>
-                              <Sun className="w-4 h-4 rotate-0 transition-all" />
+                              <span className="italic">Petang</span>
+                              <Moon className="w-4 h-4 rotate-0 transition-all" />
                             </span>
-                          ) : (
-                            ayat.time === "petang" && (
-                              <span className="flex items-center gap-x-1.5 text-sm">
-                                <span className="italic">Petang</span>
-                                <Moon className="w-4 h-4 rotate-0 transition-all" />
-                              </span>
-                            )
-                          )}
-                        </div>
+                          )
+                        )}
                       </div>
                     </div>
-                    <div className="w-full text-right flex gap-x-2.5 items-start justify-end">
-                      <div
-                        className="relative mt-2 text-right font-lpmq"
-                        dangerouslySetInnerHTML={{
-                          __html: arabicContent,
-                        }}
-                      />
-                    </div>
-                    <div className="mt-3 space-y-3">
-                      <div
-                        className="translation-text text-sm text-muted-foreground"
-                        dangerouslySetInnerHTML={{
-                          __html: translateContent,
-                        }}
-                      />
-                      <div
-                        className="text-sm text-muted-foreground italic"
-                        dangerouslySetInnerHTML={{
-                          __html: ayat.faedah,
-                        }}
-                      />
-                      <div
-                        className="text-sm text-muted-foreground italic"
-                        dangerouslySetInnerHTML={{
-                          __html: ayat.narrator,
-                        }}
-                      />
-                    </div>
-                  </li>
-                );
-              })}
-          </ul>
-        </TabsContent>
-        <TabsContent value="petang">
-          <ul role="list" className="">
-            {dzikr
-              .filter((d) => d.time === "" || d.time === "petang")
-              .map((ayat, index) => {
-                const arabicContent = ayat?.arabic
-                  .replace(/@/g, "\n")
-                  .replace(/<p>/g, '<p class="font-lpmq">'); // Menambahkan kelas 'font-lpmq' pada tag <p>
-                const translateContent = ayat?.translated_id
-                  .replace(/@/g, "<br/><br/>")
-                  .replace(/(\.)(\s|$)/g, "$1<br />");
-                return (
-                  <li
-                    key={index}
-                    style={{ animationDelay: `${index * 0.1}s` }}
-                    className={`animate-slide-top [animation-fill-mode:backwards] group relative py-5 px-3 sm:px-5 hover:bg-accent/70 rounded-md `}
-                  >
-                    <div>
-                      <div className="space-y-1 mb-2">
-                        <h4 className="font-medium leading-none">
-                          {ayat.title}
-                        </h4>
-                        <div className="flex items-center gap-x-1 text-sm text-muted-foreground italic">
-                          {ayat?.note && (
-                            <span className="italic">{ayat.note}</span>
-                          )}
+                  </div>
+                  <div className="w-full text-right flex gap-x-2.5 items-start justify-end">
+                    <div
+                      className="relative mt-2 text-right font-lpmq"
+                      dangerouslySetInnerHTML={{
+                        __html: arabicContent,
+                      }}
+                    />
+                  </div>
+                  <div className="mt-3 space-y-3">
+                    <div
+                      className="translation-text text-sm text-muted-foreground"
+                      dangerouslySetInnerHTML={{
+                        __html: translateContent,
+                      }}
+                    />
+                    <div
+                      className="text-sm text-muted-foreground italic"
+                      dangerouslySetInnerHTML={{
+                        __html: ayat.faedah,
+                      }}
+                    />
+                    <div
+                      className="text-sm text-muted-foreground italic"
+                      dangerouslySetInnerHTML={{
+                        __html: ayat.narrator,
+                      }}
+                    />
+                  </div>
+                </li>
+              );
+            })}
+        </ul>
+      ) : (
+        <ul role="list" className="">
+          {dzikr
+            .filter((d) => d.time === "" || d.time === "petang")
+            .map((ayat, index) => {
+              const arabicContent = ayat?.arabic
+                .replace(/@/g, "\n")
+                .replace(/<p>/g, '<p class="font-lpmq">'); // Menambahkan kelas 'font-lpmq' pada tag <p>
+              const translateContent = ayat?.translated_id
+                .replace(/@/g, "<br/><br/>")
+                .replace(/(\.)(\s|$)/g, "$1<br />");
+              return (
+                <li
+                  key={index}
+                  style={{ animationDelay: `${index * 0.1}s` }}
+                  className={`animate-slide-top [animation-fill-mode:backwards] group relative py-5 px-3 sm:px-5 hover:bg-accent/70 rounded-md `}
+                >
+                  <div>
+                    <div className="space-y-1 mb-2">
+                      <h4 className="font-medium leading-none">{ayat.title}</h4>
+                      <div className="flex items-center gap-x-1 text-sm text-muted-foreground italic">
+                        {ayat?.note && (
+                          <span className="italic">{ayat.note}</span>
+                        )}
 
-                          {ayat.time !== "" && "Setiap "}
-                          {ayat.time === "pagi" ? (
+                        {ayat.time !== "" && "Setiap "}
+                        {ayat.time === "pagi" ? (
+                          <span className="flex items-center gap-x-1.5 text-sm">
+                            <span className="italic">Pagi</span>
+                            <Sun className="w-4 h-4 rotate-0 transition-all" />
+                          </span>
+                        ) : (
+                          ayat.time === "petang" && (
                             <span className="flex items-center gap-x-1.5 text-sm">
-                              <span className="italic">Pagi</span>
-                              <Sun className="w-4 h-4 rotate-0 transition-all" />
+                              <span className="italic">Petang</span>
+                              <Moon className="w-4 h-4 rotate-0 transition-all" />
                             </span>
-                          ) : (
-                            ayat.time === "petang" && (
-                              <span className="flex items-center gap-x-1.5 text-sm">
-                                <span className="italic">Petang</span>
-                                <Moon className="w-4 h-4 rotate-0 transition-all" />
-                              </span>
-                            )
-                          )}
-                        </div>
+                          )
+                        )}
                       </div>
                     </div>
-                    <div className="w-full text-right flex gap-x-2.5 items-start justify-end">
-                      <p
-                        className="relative mt-2 text-right font-lpmq"
-                        dangerouslySetInnerHTML={{
-                          __html: arabicContent,
-                        }}
-                      />
-                    </div>
-                    <div className="mt-3 space-y-3">
-                      <div
-                        className="translation-text text-sm text-muted-foreground"
-                        dangerouslySetInnerHTML={{
-                          __html: translateContent,
-                        }}
-                      />
-                      <div
-                        className="text-sm text-muted-foreground italic"
-                        dangerouslySetInnerHTML={{
-                          __html: ayat.faedah,
-                        }}
-                      />
-                      <div
-                        className="text-sm text-muted-foreground italic"
-                        dangerouslySetInnerHTML={{
-                          __html: ayat.narrator,
-                        }}
-                      />
-                    </div>
-                  </li>
-                );
-              })}
-          </ul>
-        </TabsContent>
-      </Tabs>
+                  </div>
+                  <div className="w-full text-right flex gap-x-2.5 items-start justify-end">
+                    <p
+                      className="relative mt-2 text-right font-lpmq"
+                      dangerouslySetInnerHTML={{
+                        __html: arabicContent,
+                      }}
+                    />
+                  </div>
+                  <div className="mt-3 space-y-3">
+                    <div
+                      className="translation-text text-sm text-muted-foreground"
+                      dangerouslySetInnerHTML={{
+                        __html: translateContent,
+                      }}
+                    />
+                    <div
+                      className="text-sm text-muted-foreground italic"
+                      dangerouslySetInnerHTML={{
+                        __html: ayat.faedah,
+                      }}
+                    />
+                    <div
+                      className="text-sm text-muted-foreground italic"
+                      dangerouslySetInnerHTML={{
+                        __html: ayat.narrator,
+                      }}
+                    />
+                  </div>
+                </li>
+              );
+            })}
+        </ul>
+      )}
     </div>
   );
 };

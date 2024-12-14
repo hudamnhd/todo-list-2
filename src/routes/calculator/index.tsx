@@ -268,7 +268,7 @@ const Calculator: React.FC = () => {
     <div
       className={cn(
         "relative flex flex-col gap-2 justify-between bg-background w-full p-2.5 sm:p-4 shadow-lg sm:h-screen sm:max-w-sm mx-auto",
-        is_equal_window ? "h-[calc(100vh-56px)]" : "h-screen",
+        "h-screen",
       )}
     >
       <Popover>
@@ -374,9 +374,7 @@ const Calculator: React.FC = () => {
           ref={expressionRef}
           className={cn(
             "space-y-1 text-2xl font-semibold  overflow-y-auto pr-3 mb-2",
-            is_equal_window
-              ? "max-h-[calc(100vh-380px)]"
-              : "max-h-[calc(100vh-350px)]",
+            "max-h-[calc(100vh-350px)]",
           )}
         >
           {splitExpression(currentInput).map((item, index, arr) => {
@@ -391,7 +389,7 @@ const Calculator: React.FC = () => {
                       <div className="gap-x-6 flex items-center text-[16px] w-4 text-start text-muted-foreground">
                         <span>{index === 0 && "1."}</span>
                       </div>
-                      <span className="text-xl font-semibold">
+                      <span className="text-2xl font-semibold">
                         {formatRupiah(parseInt(item))}
                       </span>
                     </div>
@@ -410,12 +408,12 @@ const Calculator: React.FC = () => {
                           </span>
                         </div>
                         <span
-                          className={`${index === lastIndex ? "relative" : ""} text-xl font-semibold `}
+                          className={`${index === lastIndex ? "relative" : ""} text-2xl font-semibold `}
                         >
                           {index === lastIndex ? (
                             <span className="relative flex justify-end">
                               <span className="animate-ping absolute inline-flex h-[23px] w-[12px] rounded bg-sky-400 opacity-90"></span>
-                              <span className="text-xl font-semibold">
+                              <span className="text-2xl font-semibold">
                                 {formatRupiah(parseInt(item))}
                               </span>
                             </span>
@@ -434,12 +432,12 @@ const Calculator: React.FC = () => {
           })}
 
           <div className="bg-background text-primary flex items-center justify-between sticky bottom-0 z-10 border-t-2 border-primary">
-            <div className="py-1 text-xl font-semibold text-right">TOTAL </div>
+            <div className="py-2 text-xl font-semibold text-right">TOTAL </div>
             <div className="flex items-center gap-2 py-1">
               {lastOperator !== "" && (
                 <Badge className="text-xl p-0 px-2">{lastOperator}</Badge>
               )}
-              <span className="text-2xl font-semibold text-right">
+              <span className="text-2xl font-bold text-right">
                 {formatRupiah(evaluateInput(currentInput))}
               </span>
             </div>
@@ -450,29 +448,28 @@ const Calculator: React.FC = () => {
         {/* Calculator Buttons */}
         {/*biome-ignore format: the code should not be formatted*/}
         <div className="grid grid-cols-4 gap-2">
-            <Button size="lg" className="text-xl" onClick={handleClear}>C</Button>
-            <Button size="lg" className="[&_svg]:size-6"  onClick={() => handleOperatorClick("*")}><X /></Button>
+            <Button size="lg" className="font-bold text-xl" onClick={handleClear}>C</Button>
+            <Button size="lg" className="[&_svg]:size-6"  onClick={() => handleOperatorClick("*")}><X strokeWidth={3} /></Button>
             <Button size="lg" onClick={() => handleOperatorClick("/")}><div className="text-3xl scale-[110%] pb-1">÷</div></Button>
-            <Button size="lg" variant="destructive" className="[&_svg]:size-6"  onClick={handleBackspace}><Delete /></Button>
+            <Button size="lg" variant="destructive" className="[&_svg]:size-6"  onClick={handleBackspace}><Delete strokeWidth={2} /></Button>
 
-            <Button className="text-2xl" size="lg" variant="outline" onClick={() => handleButtonClick("7")}>7</Button>
-            <Button className="text-2xl" size="lg" variant="outline" onClick={() => handleButtonClick("8")}>8</Button>
-            <Button className="text-2xl" size="lg" variant="outline" onClick={() => handleButtonClick("9")}>9</Button>
-            <Button className="[&_svg]:size-6"  size="lg"  onClick={() => handleOperatorClick("-")}><Minus /></Button>
+            <Button className="font-bold text-2xl" size="lg" variant="outline" onClick={() => handleButtonClick("7")}>7</Button>
+            <Button className="font-bold text-2xl" size="lg" variant="outline" onClick={() => handleButtonClick("8")}>8</Button>
+            <Button className="font-bold text-2xl" size="lg" variant="outline" onClick={() => handleButtonClick("9")}>9</Button>
+            <Button className="[&_svg]:size-6"  size="lg"  onClick={() => handleOperatorClick("-")}><Minus strokeWidth={3} /></Button>
+            <Button className="font-bold text-2xl" size="lg" variant="outline" onClick={() => handleButtonClick("4")}>4</Button>
+            <Button className="font-bold text-2xl" size="lg" variant="outline" onClick={() => handleButtonClick("5")}>5</Button>
+            <Button className="font-bold text-2xl" size="lg" variant="outline" onClick={() => handleButtonClick("6")}>6</Button>
+            <Button className="[&_svg]:size-6 duration-300"  size="lg"  onClick={() => handleOperatorClick("+")}><Plus strokeWidth={3} /></Button>
 
-            <Button className="text-2xl" size="lg" variant="outline" onClick={() => handleButtonClick("4")}>4</Button>
-            <Button className="text-2xl" size="lg" variant="outline" onClick={() => handleButtonClick("5")}>5</Button>
-            <Button className="text-2xl" size="lg" variant="outline" onClick={() => handleButtonClick("6")}>6</Button>
-            <Button className=" [&_svg]:size-6 duration-300"  size="lg"  onClick={() => handleOperatorClick("+")}><Plus /></Button>
-
-            <Button className="text-2xl" size="lg" variant="outline" onClick={() => handleButtonClick("1")}>1</Button>
-            <Button className="text-2xl" size="lg" variant="outline" onClick={() => handleButtonClick("2")}>2</Button>
-            <Button className="text-2xl" size="lg" variant="outline" onClick={() => handleButtonClick("3")}>3</Button>
-            <Button className="[&_svg]:size-6"  size="lg"   onClick={handleEvaluate}><Equal /></Button>
-            <Button className="text-2xl" size="lg" variant="outline" onClick={() => handleButtonClick("0")}>0</Button>
-            <Button className="text-2xl" size="lg" variant="outline" onClick={() => handleButtonClick("00")}>00</Button>
-            <Button className="text-2xl" size="lg" variant="outline" onClick={() => handleButtonClick("000")}>000</Button>
-            <Button className="text-2xl" size="lg" variant="outline" onClick={() => handleButtonClick(".")}>.</Button>
+            <Button className="font-bold text-2xl" size="lg" variant="outline" onClick={() => handleButtonClick("1")}>1</Button>
+            <Button className="font-bold text-2xl" size="lg" variant="outline" onClick={() => handleButtonClick("2")}>2</Button>
+            <Button className="font-bold text-2xl" size="lg" variant="outline" onClick={() => handleButtonClick("3")}>3</Button>
+            <Button className="[&_svg]:size-6"  size="lg"   onClick={handleEvaluate}><Equal strokeWidth={3} /></Button>
+            <Button className="font-bold text-2xl" size="lg" variant="outline" onClick={() => handleButtonClick("0")}>0</Button>
+            <Button className="font-bold text-2xl" size="lg" variant="outline" onClick={() => handleButtonClick("00")}>00</Button>
+            <Button className="font-bold text-2xl" size="lg" variant="outline" onClick={() => handleButtonClick("000")}>000</Button>
+            <Button className="font-bold text-2xl" size="lg" variant="outline" onClick={() => handleButtonClick(".")}>.</Button>
         </div>
         {/*biome-ignore format: the code should not be formatted*/}
       </div>
