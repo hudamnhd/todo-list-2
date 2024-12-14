@@ -1,10 +1,15 @@
 import Kanban from "./routes/kanban/index.tsx";
-import Quran from "./routes/quran/index.tsx";
+import Calculator from "./routes/calculator/index.tsx";
+import Muslim from "./routes/muslim/index.tsx";
 import {
   loaderSuratId,
+  SholawatView,
+  DoaHarianView,
+  DzikrView,
+  TahlilView,
   SuratView,
   IndexQuranId,
-} from "./routes/quran/index.tsx";
+} from "./routes/muslim/index.tsx";
 import { createRoot } from "react-dom/client";
 import { Outlet, createBrowserRouter, RouterProvider } from "react-router-dom";
 import DailyTasks from "./routes/daily/index.tsx";
@@ -25,18 +30,38 @@ const router = createBrowserRouter([
         element: <Kanban />,
       },
       {
-        path: "/quran",
-        element: <Quran />,
+        path: "/calculator",
+        element: <Calculator />,
+      },
+      {
+        path: "/muslim",
+        element: <Muslim />,
         children: [
           {
-            path: "/quran",
+            path: "/muslim/quran-surat",
             index: true,
             element: <IndexQuranId />,
           },
           {
-            path: "/quran/:id",
+            path: "/muslim/quran-surat/:id",
             loader: loaderSuratId,
             element: <SuratView />,
+          },
+          {
+            path: "/muslim/sholawat",
+            element: <SholawatView />,
+          },
+          {
+            path: "/muslim/tahlil",
+            element: <TahlilView />,
+          },
+          {
+            path: "/muslim/doaharian",
+            element: <DoaHarianView />,
+          },
+          {
+            path: "/muslim/dzikr",
+            element: <DzikrView />,
           },
         ],
       },

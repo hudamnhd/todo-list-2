@@ -2393,7 +2393,6 @@ function SelectFilter({ value, setValue, tasks }) {
       <Select value={value} onValueChange={setValue}>
         <SelectTrigger className="max-w-[150px] p-0 flex gap-x-1 items-center border-none focus:ring-0 shadow-none w-fit p-0 h-6 text-muted-foreground">
           <SelectValue placeholder="Filter Category" />
-          <Filter className="w-4 h-4 flex-none" />
         </SelectTrigger>
         <SelectContent className="[&_*[role=option]>span>svg]:shrink-0 [&_*[role=option]>span>svg]:text-muted-foreground/80 [&_*[role=option]>span]:end-2 [&_*[role=option]>span]:start-auto [&_*[role=option]>span]:flex [&_*[role=option]>span]:items-center [&_*[role=option]>span]:gap-2 [&_*[role=option]]:pe-8 [&_*[role=option]]:ps-2">
           <SelectItem value="all">
