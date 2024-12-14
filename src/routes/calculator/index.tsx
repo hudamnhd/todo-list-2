@@ -334,7 +334,7 @@ const Calculator: React.FC = () => {
             <div key={index} className="grid break-words py-2">
               <Collapsible>
                 <CollapsibleTrigger className="w-full [&[data-state=open]>div.chev]:hidden">
-                  <div className="text-muted-foreground text-pretty text-xl font-medium text-start w-[300px]">
+                  <div className="text-pretty text-xl font-medium text-start w-[300px]">
                     {splitExpression(processInput(d.expression)).map(
                       (dt, index) => (
                         <React.Fragment key={index}>{dt}</React.Fragment>
@@ -356,8 +356,8 @@ const Calculator: React.FC = () => {
                             <div key={index} className="text-right">
                               {index === 0 ? (
                                 // Menampilkan angka pertama dengan warna biru
-                                <div className="flex items-center justify-between border-b border-dashed border-gray-400 px-2 bg-green-100">
-                                  <div className="gap-x-6 flex items-center text-[16px] w-4 text-start text-muted-foreground">
+                                <div className="flex items-center justify-between border-b border-dashed border-gray-400 px-2 bg-green-50 dark:bg-green-950">
+                                  <div className="gap-x-6 flex items-center text-[16px] w-4 text-start">
                                     <span>{index === 0 && "1."}</span>
                                   </div>
                                   <span className="text-xl font-semibold">
@@ -372,20 +372,24 @@ const Calculator: React.FC = () => {
                                       "flex items-center justify-between gap-2 items-center justify-between px-2 py-0.5 border-b border-dashed border-muted-foreground",
                                       splitExpression(
                                         processInput(d.expression),
-                                      )[index - 1] === "+" && "bg-green-50",
+                                      )[index - 1] === "+" &&
+                                        "bg-green-50 dark:bg-green-950",
                                       splitExpression(
                                         processInput(d.expression),
-                                      )[index - 1] === "-" && "bg-red-50",
+                                      )[index - 1] === "-" &&
+                                        "bg-red-50 dark:bg-red-950",
                                       splitExpression(
                                         processInput(d.expression),
-                                      )[index - 1] === "÷" && "bg-orange-50",
+                                      )[index - 1] === "÷" &&
+                                        "bg-orange-50 dark:bg-orange-950",
                                       splitExpression(
                                         processInput(d.expression),
-                                      )[index - 1] === "×" && "bg-blue-50",
+                                      )[index - 1] === "×" &&
+                                        "bg-blue-50 dark:bg-blue-950",
                                     )}
                                   >
                                     <div className="gap-x-3 flex items-center">
-                                      <span className="text-[16px] w-4 text-start text-muted-foreground">
+                                      <span className="text-[16px] w-4 text-start">
                                         {index === 0 ? "" : index / 2 + 1}.
                                       </span>
                                       <span className="text-2xl px-2">
@@ -445,8 +449,8 @@ const Calculator: React.FC = () => {
                 <div key={index} className="text-right">
                   {index === 0 ? (
                     // Menampilkan angka pertama dengan warna biru
-                    <div className="flex items-center justify-between border-b border-dashed border-gray-400">
-                      <div className="gap-x-6 flex items-center text-[16px] w-4 text-start text-muted-foreground">
+                    <div className="flex items-center justify-between border-b border-dashed border-gray-400 px-1">
+                      <div className="gap-x-4 flex items-center text-[16px] w-3 text-start text-muted-foreground">
                         <span>{index === 0 && "1."}</span>
                       </div>
                       <span className="text-2xl font-semibold">
@@ -457,10 +461,10 @@ const Calculator: React.FC = () => {
                     <>
                       {/* Menampilkan operator setelah angka */}
                       <div
-                        className={`${index === lastIndex ? "" : " border-b border-dashed border-muted-foreground"} flex items-center justify-between gap-2 items-center justify-end py-0.5`}
+                        className={`${index === lastIndex ? "" : " border-b border-dashed border-muted-foreground"} flex items-center justify-between gap-2 items-center justify-end py-0.5 px-1`}
                       >
                         <div className="gap-x-3 flex items-center">
-                          <span className="text-[16px] w-4 text-start text-muted-foreground">
+                          <span className="text-[16px] w-3 text-start text-muted-foreground">
                             {index === 0 ? "" : index / 2 + 1}.
                           </span>
                           <span className="text-2xl px-2">
@@ -492,7 +496,7 @@ const Calculator: React.FC = () => {
           })}
 
           <div className="bg-background text-primary flex items-center justify-between sticky bottom-0 z-10 border-t-2 border-primary">
-            <div className="py-2 text-xl font-semibold text-right">TOTAL </div>
+            <div className="py-2 text-xl font-bold text-right">TOTAL </div>
             <div className="flex items-center gap-3 py-1">
               {lastOperator !== "" && (
                 <span className="relative flex justify-end">
@@ -518,23 +522,23 @@ const Calculator: React.FC = () => {
             <Button size="lg" onClick={() => handleOperatorClick("/")}><div className="text-4xl font-bold pb-1">÷</div></Button>
             <Button size="lg" variant="destructive" className="[&_svg]:size-6"  onClick={handleBackspace}><Delete strokeWidth={2} /></Button>
 
-            <Button className="font-bold text-4xl" size="lg" variant="outline" onClick={() => handleButtonClick("7")}>7</Button>
-            <Button className="font-bold text-4xl" size="lg" variant="outline" onClick={() => handleButtonClick("8")}>8</Button>
-            <Button className="font-bold text-4xl" size="lg" variant="outline" onClick={() => handleButtonClick("9")}>9</Button>
+            <Button className="font-semibold text-4xl" size="lg" variant="outline" onClick={() => handleButtonClick("7")}>7</Button>
+            <Button className="font-semibold text-4xl" size="lg" variant="outline" onClick={() => handleButtonClick("8")}>8</Button>
+            <Button className="font-semibold text-4xl" size="lg" variant="outline" onClick={() => handleButtonClick("9")}>9</Button>
             <Button className="[&_svg]:size-8"  size="lg"  onClick={() => handleOperatorClick("-")}><Minus strokeWidth={3} /></Button>
-            <Button className="font-bold text-4xl" size="lg" variant="outline" onClick={() => handleButtonClick("4")}>4</Button>
-            <Button className="font-bold text-4xl" size="lg" variant="outline" onClick={() => handleButtonClick("5")}>5</Button>
-            <Button className="font-bold text-4xl" size="lg" variant="outline" onClick={() => handleButtonClick("6")}>6</Button>
+            <Button className="font-semibold text-4xl" size="lg" variant="outline" onClick={() => handleButtonClick("4")}>4</Button>
+            <Button className="font-semibold text-4xl" size="lg" variant="outline" onClick={() => handleButtonClick("5")}>5</Button>
+            <Button className="font-semibold text-4xl" size="lg" variant="outline" onClick={() => handleButtonClick("6")}>6</Button>
             <Button className="[&_svg]:size-8 duration-300"  size="lg"  onClick={() => handleOperatorClick("+")}><Plus strokeWidth={3} /></Button>
 
-            <Button className="font-bold text-4xl" size="lg" variant="outline" onClick={() => handleButtonClick("1")}>1</Button>
-            <Button className="font-bold text-4xl" size="lg" variant="outline" onClick={() => handleButtonClick("2")}>2</Button>
-            <Button className="font-bold text-4xl" size="lg" variant="outline" onClick={() => handleButtonClick("3")}>3</Button>
+            <Button className="font-semibold text-4xl" size="lg" variant="outline" onClick={() => handleButtonClick("1")}>1</Button>
+            <Button className="font-semibold text-4xl" size="lg" variant="outline" onClick={() => handleButtonClick("2")}>2</Button>
+            <Button className="font-semibold text-4xl" size="lg" variant="outline" onClick={() => handleButtonClick("3")}>3</Button>
             <Button className="[&_svg]:size-8"  size="lg"   onClick={handleEvaluate}><Equal strokeWidth={3} /></Button>
-            <Button className="font-bold text-4xl" size="lg" variant="outline" onClick={() => handleButtonClick("0")}>0</Button>
-            <Button className="font-bold text-4xl" size="lg" variant="outline" onClick={() => handleButtonClick("00")}>00</Button>
-            <Button className="font-bold text-4xl" size="lg" variant="outline" onClick={() => handleButtonClick("000")}>000</Button>
-            <Button className="font-bold text-4xl" size="lg" variant="outline" onClick={() => handleButtonClick(".")}>.</Button>
+            <Button className="font-semibold text-4xl" size="lg" variant="outline" onClick={() => handleButtonClick("0")}>0</Button>
+            <Button className="font-semibold text-4xl" size="lg" variant="outline" onClick={() => handleButtonClick("00")}>00</Button>
+            <Button className="font-semibold text-4xl" size="lg" variant="outline" onClick={() => handleButtonClick("000")}>000</Button>
+            <Button className="font-semibold text-4xl" size="lg" variant="outline" onClick={() => handleButtonClick(".")}>.</Button>
         </div>
         {/*biome-ignore format: the code should not be formatted*/}
       </div>
