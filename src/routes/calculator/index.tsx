@@ -134,8 +134,19 @@ const Calculator: React.FC = () => {
 
   const lastOperator = getLastOperator(currentInput);
   // Fungsi untuk menambahkan input ke kalkulator
+
   const handleButtonClick = (value: string) => {
-    setCurrentInput((prev) => prev + value);
+    setCurrentInput((prev) => {
+      // Jika input kosong dan value "0", "00", atau "000", hanya tambahkan satu "0"
+      if (prev === "" && /^[0]+$/.test(value)) return "0";
+      if (prev === "0" && /^[0]+$/.test(value)) return "0";
+
+      // Jika input hanya "0", ganti dengan nilai baru
+      if (prev === "0") return value;
+
+      // Normal concatenation
+      return prev + value;
+    });
   };
 
   // Fungsi untuk menghapus input
@@ -153,7 +164,7 @@ const Calculator: React.FC = () => {
   const handleEvaluate = () => {
     try {
       // Menghitung ekspresi dan menyimpan hasil
-      const result = evaluateInput(currentInput); // Gunakan dengan hati-hati, untuk demo saja
+      const result = evaluateInputSequential(currentInput); // Gunakan dengan hati-hati, untuk demo saja
       const newHistory: HistoryItem = {
         expression: currentInput,
         result: result.toString(),
@@ -196,6 +207,41 @@ const Calculator: React.FC = () => {
     input = input.replace(/[+\-*/]$/, "");
 
     return input;
+  }
+
+  function evaluateInputSequential(input) {
+    // Langkah 1: Pisahkan angka dan operator
+    const processedInput = processInput(input);
+    const tokens = processedInput.match(/(\d+|\+|\-|\*|\/)/g);
+    if (!tokens) return 0;
+
+    // Langkah 2: Mulai evaluasi secara berurutan
+    let result = parseFloat(tokens[0]); // Ambil angka pertama sebagai nilai awal
+
+    for (let i = 1; i < tokens.length; i += 2) {
+      const operator = tokens[i]; // Ambil operator
+      const nextNumber = parseFloat(tokens[i + 1]); // Ambil angka berikutnya
+
+      // Langkah 3: Lakukan operasi secara berurutan
+      switch (operator) {
+        case "+":
+          result += nextNumber;
+          break;
+        case "-":
+          result -= nextNumber;
+          break;
+        case "*":
+          result *= nextNumber;
+          break;
+        case "/":
+          result /= nextNumber;
+          break;
+        default:
+          throw new Error(`Operator tidak dikenali: ${operator}`);
+      }
+    }
+
+    return result;
   }
 
   function evaluateInput(input) {
@@ -288,14 +334,14 @@ const Calculator: React.FC = () => {
             <div key={index} className="grid break-words py-2">
               <Collapsible>
                 <CollapsibleTrigger className="w-full [&[data-state=open]>div.chev]:hidden">
-                  <div className="text-muted-foreground text-pretty font-medium text-start w-[300px]">
+                  <div className="text-muted-foreground text-pretty text-xl font-medium text-start w-[300px]">
                     {splitExpression(processInput(d.expression)).map(
                       (dt, index) => (
                         <React.Fragment key={index}>{dt}</React.Fragment>
                       ),
                     )}
                   </div>
-                  <div className="chev text-xl text-right font-semibold">
+                  <div className="chev text-2xl text-right font-semibold">
                     {d.result && `${formatRupiah(parseInt(d.result))}`}
                   </div>
                 </CollapsibleTrigger>
@@ -310,7 +356,7 @@ const Calculator: React.FC = () => {
                             <div key={index} className="text-right">
                               {index === 0 ? (
                                 // Menampilkan angka pertama dengan warna biru
-                                <div className="flex items-center justify-between border-b border-dashed border-gray-400">
+                                <div className="flex items-center justify-between border-b border-dashed border-gray-400 px-2 bg-green-100">
                                   <div className="gap-x-6 flex items-center text-[16px] w-4 text-start text-muted-foreground">
                                     <span>{index === 0 && "1."}</span>
                                   </div>
@@ -322,13 +368,27 @@ const Calculator: React.FC = () => {
                                 <>
                                   {/* Menampilkan operator setelah angka */}
                                   <div
-                                    className={`${index === lastIndex ? "" : "bg-red-100 border-b border-dashed border-muted-foreground"} flex items-center justify-between gap-2 items-center justify-end py-0.5`}
+                                    className={cn(
+                                      "flex items-center justify-between gap-2 items-center justify-between px-2 py-0.5 border-b border-dashed border-muted-foreground",
+                                      splitExpression(
+                                        processInput(d.expression),
+                                      )[index - 1] === "+" && "bg-green-50",
+                                      splitExpression(
+                                        processInput(d.expression),
+                                      )[index - 1] === "-" && "bg-red-50",
+                                      splitExpression(
+                                        processInput(d.expression),
+                                      )[index - 1] === "÷" && "bg-orange-50",
+                                      splitExpression(
+                                        processInput(d.expression),
+                                      )[index - 1] === "×" && "bg-blue-50",
+                                    )}
                                   >
                                     <div className="gap-x-3 flex items-center">
                                       <span className="text-[16px] w-4 text-start text-muted-foreground">
                                         {index === 0 ? "" : index / 2 + 1}.
                                       </span>
-                                      <span className="text-xl px-2">
+                                      <span className="text-2xl px-2">
                                         {
                                           splitExpression(
                                             processInput(d.expression),
@@ -350,7 +410,7 @@ const Calculator: React.FC = () => {
                       },
                     )}
 
-                    <div className="bg-background text-primary flex items-center justify-between sticky bottom-0 z-10 border-t-2 border-primary">
+                    <div className="bg-background text-primary flex items-center justify-between sticky bottom-0 z-10 border-t-2 border-primary px-2">
                       <div className="py-1 text-xl font-semibold text-right">
                         TOTAL{" "}
                       </div>
@@ -433,12 +493,17 @@ const Calculator: React.FC = () => {
 
           <div className="bg-background text-primary flex items-center justify-between sticky bottom-0 z-10 border-t-2 border-primary">
             <div className="py-2 text-xl font-semibold text-right">TOTAL </div>
-            <div className="flex items-center gap-2 py-1">
+            <div className="flex items-center gap-3 py-1">
               {lastOperator !== "" && (
-                <Badge className="text-xl p-0 px-2">{lastOperator}</Badge>
+                <span className="relative flex justify-end">
+                  <span className="text-2xl font-semibold pb-1">
+                    {lastOperator}
+                  </span>
+                </span>
               )}
               <span className="text-2xl font-bold text-right">
-                {formatRupiah(evaluateInput(currentInput))}
+                {/*{formatRupiah(evaluateInput(currentInput))}*/}
+                {formatRupiah(evaluateInputSequential(currentInput))}
               </span>
             </div>
           </div>
@@ -448,28 +513,28 @@ const Calculator: React.FC = () => {
         {/* Calculator Buttons */}
         {/*biome-ignore format: the code should not be formatted*/}
         <div className="grid grid-cols-4 gap-2">
-            <Button size="lg" className="font-bold text-xl" onClick={handleClear}>C</Button>
-            <Button size="lg" className="[&_svg]:size-6"  onClick={() => handleOperatorClick("*")}><X strokeWidth={3} /></Button>
-            <Button size="lg" onClick={() => handleOperatorClick("/")}><div className="text-3xl scale-[110%] pb-1">÷</div></Button>
+            <Button size="lg" className="font-semibold text-3xl" onClick={handleClear}>C</Button>
+            <Button size="lg" className="[&_svg]:size-8"  onClick={() => handleOperatorClick("*")}><X strokeWidth={3} /></Button>
+            <Button size="lg" onClick={() => handleOperatorClick("/")}><div className="text-4xl font-bold pb-1">÷</div></Button>
             <Button size="lg" variant="destructive" className="[&_svg]:size-6"  onClick={handleBackspace}><Delete strokeWidth={2} /></Button>
 
-            <Button className="font-bold text-2xl" size="lg" variant="outline" onClick={() => handleButtonClick("7")}>7</Button>
-            <Button className="font-bold text-2xl" size="lg" variant="outline" onClick={() => handleButtonClick("8")}>8</Button>
-            <Button className="font-bold text-2xl" size="lg" variant="outline" onClick={() => handleButtonClick("9")}>9</Button>
-            <Button className="[&_svg]:size-6"  size="lg"  onClick={() => handleOperatorClick("-")}><Minus strokeWidth={3} /></Button>
-            <Button className="font-bold text-2xl" size="lg" variant="outline" onClick={() => handleButtonClick("4")}>4</Button>
-            <Button className="font-bold text-2xl" size="lg" variant="outline" onClick={() => handleButtonClick("5")}>5</Button>
-            <Button className="font-bold text-2xl" size="lg" variant="outline" onClick={() => handleButtonClick("6")}>6</Button>
-            <Button className="[&_svg]:size-6 duration-300"  size="lg"  onClick={() => handleOperatorClick("+")}><Plus strokeWidth={3} /></Button>
+            <Button className="font-bold text-4xl" size="lg" variant="outline" onClick={() => handleButtonClick("7")}>7</Button>
+            <Button className="font-bold text-4xl" size="lg" variant="outline" onClick={() => handleButtonClick("8")}>8</Button>
+            <Button className="font-bold text-4xl" size="lg" variant="outline" onClick={() => handleButtonClick("9")}>9</Button>
+            <Button className="[&_svg]:size-8"  size="lg"  onClick={() => handleOperatorClick("-")}><Minus strokeWidth={3} /></Button>
+            <Button className="font-bold text-4xl" size="lg" variant="outline" onClick={() => handleButtonClick("4")}>4</Button>
+            <Button className="font-bold text-4xl" size="lg" variant="outline" onClick={() => handleButtonClick("5")}>5</Button>
+            <Button className="font-bold text-4xl" size="lg" variant="outline" onClick={() => handleButtonClick("6")}>6</Button>
+            <Button className="[&_svg]:size-8 duration-300"  size="lg"  onClick={() => handleOperatorClick("+")}><Plus strokeWidth={3} /></Button>
 
-            <Button className="font-bold text-2xl" size="lg" variant="outline" onClick={() => handleButtonClick("1")}>1</Button>
-            <Button className="font-bold text-2xl" size="lg" variant="outline" onClick={() => handleButtonClick("2")}>2</Button>
-            <Button className="font-bold text-2xl" size="lg" variant="outline" onClick={() => handleButtonClick("3")}>3</Button>
-            <Button className="[&_svg]:size-6"  size="lg"   onClick={handleEvaluate}><Equal strokeWidth={3} /></Button>
-            <Button className="font-bold text-2xl" size="lg" variant="outline" onClick={() => handleButtonClick("0")}>0</Button>
-            <Button className="font-bold text-2xl" size="lg" variant="outline" onClick={() => handleButtonClick("00")}>00</Button>
-            <Button className="font-bold text-2xl" size="lg" variant="outline" onClick={() => handleButtonClick("000")}>000</Button>
-            <Button className="font-bold text-2xl" size="lg" variant="outline" onClick={() => handleButtonClick(".")}>.</Button>
+            <Button className="font-bold text-4xl" size="lg" variant="outline" onClick={() => handleButtonClick("1")}>1</Button>
+            <Button className="font-bold text-4xl" size="lg" variant="outline" onClick={() => handleButtonClick("2")}>2</Button>
+            <Button className="font-bold text-4xl" size="lg" variant="outline" onClick={() => handleButtonClick("3")}>3</Button>
+            <Button className="[&_svg]:size-8"  size="lg"   onClick={handleEvaluate}><Equal strokeWidth={3} /></Button>
+            <Button className="font-bold text-4xl" size="lg" variant="outline" onClick={() => handleButtonClick("0")}>0</Button>
+            <Button className="font-bold text-4xl" size="lg" variant="outline" onClick={() => handleButtonClick("00")}>00</Button>
+            <Button className="font-bold text-4xl" size="lg" variant="outline" onClick={() => handleButtonClick("000")}>000</Button>
+            <Button className="font-bold text-4xl" size="lg" variant="outline" onClick={() => handleButtonClick(".")}>.</Button>
         </div>
         {/*biome-ignore format: the code should not be formatted*/}
       </div>
