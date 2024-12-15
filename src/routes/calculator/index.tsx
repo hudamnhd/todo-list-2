@@ -32,7 +32,7 @@ function ThemeSwitch() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="link" size="icon">
+        <Button variant="outline" size="icon">
           <Sun className="rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
           <Moon className="absolute rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
           <span className="sr-only">Toggle theme</span>
@@ -77,7 +77,7 @@ import {
 export default function DashboardPage() {
   return (
     <>
-      <div class="absolute top-0 z-[-2] h-screen w-screen bg-background bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(120,119,198,0.3),rgba(255,255,255,0))]"></div>
+      <div className="absolute top-0 z-[-2] h-screen w-screen bg-background bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(120,119,198,0.3),rgba(255,255,255,0))]"></div>
       <Calculator />
       {/*<CalculatorSequence />
       <XCalculator />*/}
@@ -320,7 +320,7 @@ const Calculator: React.FC = () => {
       <Popover>
         <div className="w-full flex items-center justify-between">
           <div>
-            <h1 className="bg-gradient-to-r from-blue-500 via-green-500 to-orange-500 inline-block text-transparent bg-clip-text uppercase text-xl my-2 font-sans font-bold">
+            <h1 className="mr-2 bg-gradient-to-r from-blue-500 via-green-500 to-orange-500 inline-block text-transparent bg-clip-text uppercase text-xl my-2 font-sans font-bold">
               MHDA
             </h1>
             <ThemeSwitch />
@@ -414,7 +414,7 @@ const Calculator: React.FC = () => {
                       },
                     )}
 
-                    <div className="bg-background text-primary flex items-center justify-between sticky bottom-0 z-10 border-t-2 border-primary px-2">
+                    <div className="bg-background flex items-center justify-between sticky bottom-0 z-10 border-t-2 border-primary px-2">
                       <div className="py-1 text-xl font-semibold text-right">
                         TOTAL{" "}
                       </div>
@@ -495,7 +495,7 @@ const Calculator: React.FC = () => {
             }
           })}
 
-          <div className="bg-background text-primary flex items-center justify-between sticky bottom-0 z-10 border-t-2 border-primary">
+          <div className="bg-background flex items-center justify-between sticky bottom-0 z-10 border-t-2 border-primary">
             <div className="py-2 text-xl font-bold text-right">TOTAL </div>
             <div className="flex items-center gap-3 py-1">
               {lastOperator !== "" && (
@@ -517,28 +517,28 @@ const Calculator: React.FC = () => {
         {/* Calculator Buttons */}
         {/*biome-ignore format: the code should not be formatted*/}
         <div className="grid grid-cols-4 gap-2">
-            <Button size="lg" className="font-semibold text-3xl" onClick={handleClear}>C</Button>
-            <Button size="lg" className="[&_svg]:size-8"  onClick={() => handleOperatorClick("*")}><X strokeWidth={3} /></Button>
-            <Button size="lg" onClick={() => handleOperatorClick("/")}><div className="text-4xl font-bold pb-1">÷</div></Button>
+            <Button size="lg" className="font-normal text-3xl" onClick={handleClear}>C</Button>
+            <Button size="lg" className="[&_svg]:size-7"  onClick={() => handleOperatorClick("*")}><X strokeWidth={2} /></Button>
+            <Button size="lg" onClick={() => handleOperatorClick("/")}><div className="text-3xl font-medium pb-1">÷</div></Button>
             <Button size="lg" variant="destructive" className="[&_svg]:size-6"  onClick={handleBackspace}><Delete strokeWidth={2} /></Button>
 
-            <Button className="font-semibold text-4xl" size="lg" variant="outline" onClick={() => handleButtonClick("7")}>7</Button>
-            <Button className="font-semibold text-4xl" size="lg" variant="outline" onClick={() => handleButtonClick("8")}>8</Button>
-            <Button className="font-semibold text-4xl" size="lg" variant="outline" onClick={() => handleButtonClick("9")}>9</Button>
-            <Button className="[&_svg]:size-8"  size="lg"  onClick={() => handleOperatorClick("-")}><Minus strokeWidth={3} /></Button>
-            <Button className="font-semibold text-4xl" size="lg" variant="outline" onClick={() => handleButtonClick("4")}>4</Button>
-            <Button className="font-semibold text-4xl" size="lg" variant="outline" onClick={() => handleButtonClick("5")}>5</Button>
-            <Button className="font-semibold text-4xl" size="lg" variant="outline" onClick={() => handleButtonClick("6")}>6</Button>
-            <Button className="[&_svg]:size-8 duration-300"  size="lg"  onClick={() => handleOperatorClick("+")}><Plus strokeWidth={3} /></Button>
+            <Button className="font-medium text-3xl" size="lg" variant="outline" onClick={() => handleButtonClick("7")}>7</Button>
+            <Button className="font-medium text-3xl" size="lg" variant="outline" onClick={() => handleButtonClick("8")}>8</Button>
+            <Button className="font-medium text-3xl" size="lg" variant="outline" onClick={() => handleButtonClick("9")}>9</Button>
+            <Button className="[&_svg]:size-7"  size="lg"  onClick={() => handleOperatorClick("-")}><Minus strokeWidth={2} /></Button>
+            <Button className="font-medium text-3xl" size="lg" variant="outline" onClick={() => handleButtonClick("4")}>4</Button>
+            <Button className="font-medium text-3xl" size="lg" variant="outline" onClick={() => handleButtonClick("5")}>5</Button>
+            <Button className="font-medium text-3xl" size="lg" variant="outline" onClick={() => handleButtonClick("6")}>6</Button>
+            <Button className="[&_svg]:size-7 duration-300"  size="lg"  onClick={() => handleOperatorClick("+")}><Plus strokeWidth={2} /></Button>
 
-            <Button className="font-semibold text-4xl" size="lg" variant="outline" onClick={() => handleButtonClick("1")}>1</Button>
-            <Button className="font-semibold text-4xl" size="lg" variant="outline" onClick={() => handleButtonClick("2")}>2</Button>
-            <Button className="font-semibold text-4xl" size="lg" variant="outline" onClick={() => handleButtonClick("3")}>3</Button>
-            <Button className="[&_svg]:size-8"  size="lg"   onClick={handleEvaluate}><Equal strokeWidth={3} /></Button>
-            <Button className="font-semibold text-4xl" size="lg" variant="outline" onClick={() => handleButtonClick("0")}>0</Button>
-            <Button className="font-semibold text-4xl" size="lg" variant="outline" onClick={() => handleButtonClick("00")}>00</Button>
-            <Button className="font-semibold text-4xl" size="lg" variant="outline" onClick={() => handleButtonClick("000")}>000</Button>
-            <Button className="font-semibold text-4xl" size="lg" variant="outline" onClick={() => handleButtonClick(".")}>.</Button>
+            <Button className="font-medium text-3xl" size="lg" variant="outline" onClick={() => handleButtonClick("1")}>1</Button>
+            <Button className="font-medium text-3xl" size="lg" variant="outline" onClick={() => handleButtonClick("2")}>2</Button>
+            <Button className="font-medium text-3xl" size="lg" variant="outline" onClick={() => handleButtonClick("3")}>3</Button>
+            <Button className="[&_svg]:size-7"  size="lg"   onClick={handleEvaluate}><Equal strokeWidth={2} /></Button>
+            <Button className="font-medium text-3xl" size="lg" variant="outline" onClick={() => handleButtonClick("0")}>0</Button>
+            <Button className="font-medium text-3xl" size="lg" variant="outline" onClick={() => handleButtonClick("00")}>00</Button>
+            <Button className="font-medium text-3xl" size="lg" variant="outline" onClick={() => handleButtonClick("000")}>000</Button>
+            <Button className="font-medium text-3xl" size="lg" variant="outline" onClick={() => handleButtonClick(".")}>.</Button>
         </div>
         {/*biome-ignore format: the code should not be formatted*/}
       </div>

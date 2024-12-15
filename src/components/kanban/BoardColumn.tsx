@@ -56,7 +56,7 @@ export function BoardColumn({ column, tasks, isOverlay }: BoardColumnProps) {
   };
 
   const variants = cva(
-    "h-[500px] max-h-[500px] w-[350px] max-w-full bg-primary-foreground flex flex-col flex-shrink-0 snap-center",
+    "h-[500px] max-h-[500px] w-[350px] max-w-full flex flex-col flex-shrink-0 snap-center",
     {
       variants: {
         dragging: {
@@ -81,7 +81,7 @@ export function BoardColumn({ column, tasks, isOverlay }: BoardColumnProps) {
           variant={"ghost"}
           {...attributes}
           {...listeners}
-          className=" p-1 text-primary/50 -ml-2 h-auto cursor-grab relative"
+          className=" p-1 -ml-2 h-auto cursor-grab relative"
         >
           <span className="sr-only">{`Move column: ${column.title}`}</span>
           <GripVertical />

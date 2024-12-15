@@ -13,6 +13,7 @@ import {
 import { createRoot } from "react-dom/client";
 import { Outlet, createBrowserRouter, RouterProvider } from "react-router-dom";
 import DailyTasks from "./routes/daily/index.tsx";
+import { Layout } from "./routes/daily/index.tsx";
 import DailyTasksGarden from "./routes/daily/daily-garden.tsx";
 import DailyTasksSprint from "./routes/daily/daily-sprint.tsx";
 import DailyTasksBoard from "./routes/daily/daily-board.tsx";
@@ -67,7 +68,7 @@ const router = createBrowserRouter([
       },
       {
         path: "/daily",
-        element: <Outlet />,
+        element: <Layout />,
         children: [
           {
             path: "/daily",

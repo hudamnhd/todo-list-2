@@ -496,7 +496,7 @@ const AyatListHafalan: React.FC<AyatListProps> = ({
           <li
             key={ayat.aya_id}
             style={{ animationDelay: `${index * 0.1}s` }}
-            className={`animate-slide-top [animation-fill-mode:backwards] group relative py-5 pr-4 pl-2 sm:px-5 hover:bg-accent/70 rounded-md ${
+            className={`animate-slide-top [animation-fill-mode:backwards] group relative py-5 pr-4 pl-2 sm:px-5 hover:bg-accent rounded-md ${
               isLastRead ? "bg-muted" : ""
             }`}
           >
@@ -773,7 +773,7 @@ const AyatListWithFavorites: React.FC<AyatListProps> = ({
           <li
             key={ayat.aya_id}
             style={{ animationDelay: `${index * 0.1}s` }}
-            className={`animate-slide-top [animation-fill-mode:backwards] group relative py-5 pr-4 pl-2 sm:px-5 hover:bg-accent/70 rounded-md ${
+            className={`animate-slide-top [animation-fill-mode:backwards] group relative py-5 pr-4 pl-2 sm:px-5 hover:bg-accent rounded-md ${
               isLastRead ? "bg-muted" : ""
             }`}
           >
@@ -862,7 +862,7 @@ const navItems = [
 export default function Layout() {
   return (
     <React.Fragment>
-      <div className="flex h-14 items-center px-4 sticky top-0 bg-transparent backdrop-blur-md z-10">
+      <div className="flex h-14 items-center px-4 border-b sticky top-0 bg-transparent backdrop-blur-md z-10">
         <div className="mr-4 hidden md:flex">
           <a className="mr-4 flex items-center gap-2 lg:mr-6" href="/">
             <BookOpenText className="w-5 h-5" />
@@ -1081,7 +1081,7 @@ export const IndexQuranId: React.FC<AyatListProps> = () => {
                     }}
                     key={ayat.aya_id}
                     style={{ animationDelay: `${index * 0.1}s` }}
-                    className={`animate-slide-top [animation-fill-mode:backwards] group relative py-5 px-3 sm:px-5 hover:bg-accent/70 rounded-md ${
+                    className={`animate-slide-top [animation-fill-mode:backwards] group relative py-5 px-3 sm:px-5 hover:bg-accent rounded-md ${
                       isLastRead ? "" : ""
                     }`}
                   >
@@ -1169,7 +1169,7 @@ export const IndexQuranId: React.FC<AyatListProps> = () => {
                     }}
                     key={ayat.aya_id}
                     style={{ animationDelay: `${index * 0.1}s` }}
-                    className={`animate-slide-top [animation-fill-mode:backwards] group relative py-5 px-3 sm:px-5 hover:bg-accent/70 rounded-md ${
+                    className={`animate-slide-top [animation-fill-mode:backwards] group relative py-5 px-3 sm:px-5 hover:bg-accent rounded-md ${
                       isLastRead ? "bg-muted" : ""
                     }`}
                   >
@@ -1305,7 +1305,7 @@ export const DoaHarianView = () => {
             <li
               key={index}
               style={{ animationDelay: `${index * 0.1}s` }}
-              className={`animate-slide-top [animation-fill-mode:backwards] group relative py-5 px-3 sm:px-5 hover:bg-accent/70 rounded-md `}
+              className={`animate-slide-top [animation-fill-mode:backwards] group relative py-5 px-3 sm:px-5 hover:bg-accent rounded-md `}
             >
               <div>
                 <div className="space-y-1 mb-2">
@@ -1358,7 +1358,7 @@ export const SholawatView = () => {
             <li
               key={index}
               style={{ animationDelay: `${index * 0.1}s` }}
-              className={`animate-slide-top [animation-fill-mode:backwards] group relative py-5 px-3 sm:px-5 hover:bg-accent/70 rounded-md `}
+              className={`animate-slide-top [animation-fill-mode:backwards] group relative py-5 px-3 sm:px-5 hover:bg-accent rounded-md `}
             >
               <h2 className="font-bold mb-2">{ayat.nama}</h2>
               <div className="w-full text-right flex gap-x-2.5 items-start justify-end">
@@ -1414,7 +1414,7 @@ export const DzikrView = () => {
                 <li
                   key={index}
                   style={{ animationDelay: `${index * 0.1}s` }}
-                  className={`animate-slide-top [animation-fill-mode:backwards] group relative py-5 px-3 sm:px-5 hover:bg-accent/70 rounded-md `}
+                  className={`animate-slide-top [animation-fill-mode:backwards] group relative py-5 px-3 sm:px-5 hover:bg-accent rounded-md `}
                 >
                   <div>
                     <div className="space-y-1 mb-2">
@@ -1488,7 +1488,7 @@ export const DzikrView = () => {
                 <li
                   key={index}
                   style={{ animationDelay: `${index * 0.1}s` }}
-                  className={`animate-slide-top [animation-fill-mode:backwards] group relative py-5 px-3 sm:px-5 hover:bg-accent/70 rounded-md `}
+                  className={`animate-slide-top [animation-fill-mode:backwards] group relative py-5 px-3 sm:px-5 hover:bg-accent rounded-md `}
                 >
                   <div>
                     <div className="space-y-1 mb-2">
@@ -1576,7 +1576,7 @@ export const TahlilView = () => {
             <li
               key={index}
               style={{ animationDelay: `${index * 0.1}s` }}
-              className={`animate-slide-top [animation-fill-mode:backwards] group relative py-5 px-3 sm:px-5 hover:bg-accent/70 rounded-md `}
+              className={`animate-slide-top [animation-fill-mode:backwards] group relative py-5 px-3 sm:px-5 hover:bg-accent rounded-md `}
             >
               <div>
                 <div className="space-y-1 mb-2">
