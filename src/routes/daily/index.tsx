@@ -6,6 +6,7 @@ import { toast } from "@/components/ui/use-toast";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import React, { useMemo } from "react";
+import { Separator } from "@/components/ui/separator";
 import { useAppSelector, useAppDispatch } from "@/store/hooks";
 import store from "@/store/store";
 import {
@@ -350,6 +351,7 @@ const TodoNavigator = ({ data }) => {
         />
 
         <KanbanBoardTasks
+          data={data}
           tasks={todos}
           date={date_key}
           active_task={active_task}
@@ -586,7 +588,7 @@ const LocalStorageProgressBar: React.FC = () => {
             }}
           />
         </div>
-        <div className="flex gap-2 sm:flex-row flex-col items-center justify-between mt-1">
+        <div className="flex gap-2 items-center justify-between mt-1">
           <Label>{formatSize(getLocalStorageSize())} / 5MB</Label>
           <Label>{progress.toFixed(2)}% terpakai</Label>
         </div>
@@ -2285,9 +2287,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Select as SelectRadix,
+  SelectContent as SelectContentRadix,
+  SelectItem as SelectItemRadix,
+  SelectTrigger as SelectTriggerRadix,
+  SelectValue as SelectValueRadix,
+} from "@/components/custom/select.tsx";
 
 function StatusDot({ color }: { color?: string }) {
   if (color) return <Squircle fill={color} color={color} />;
+  return <Squircle className="fill-primary text-primary" />;
 
   const gradientId = "gradient1";
 
@@ -2397,7 +2407,7 @@ function SelectFilter({ date, value, setValue, tasks }) {
           <SelectContent className="[&_*[role=option]>span>svg]:shrink-0 [&_*[role=option]>span>svg]:text-muted-foreground/80 [&_*[role=option]>span]:end-2 [&_*[role=option]>span]:start-auto [&_*[role=option]>span]:flex [&_*[role=option]>span]:items-center [&_*[role=option]>span]:gap-2 [&_*[role=option]]:pe-8 [&_*[role=option]]:ps-2">
             <SelectItem value="all">
               <span className="flex items-center gap-1 mr-2">
-                <StatusDot color={"white"} />
+                <StatusDot />
                 <span className="truncate">
                   All Category{" "}
                   {tasks.length > 0 && <span>( {tasks.length} )</span>}
@@ -2446,48 +2456,53 @@ function SelectDemo({ task, subtask, date }: { task: Task }) {
     { label: "Miscellaneous", color: "#1e3a8a" },
   ];
   return (
-    <Select
-      defaultValue={subtask ? subtask.category.color : task.category.color}
-      onValueChange={(e) => {
-        const _category = taskCategories.find((item) => item.color === e);
-        if (subtask) {
-          dispatch(
-            updateSubTask({
-              id: task.id,
-              sub_task_id: subtask.id,
-              updated_sub_task: {
-                category: _category,
-              },
-            }),
-          );
-        } else {
-          dispatch(
-            updateTask({
-              id: task.id,
-              key: date.timestamp,
-              updated_task: {
-                title: task.title,
-                category: _category,
-              },
-            }),
-          );
-        }
-      }}
-    >
-      <SelectTrigger className="border-none focus:ring-0 shadow-none w-fit p-0 h-6">
-        <SelectValue placeholder="Select status" />
-      </SelectTrigger>
-      <SelectContent className="[&_*[role=option]>span>svg]:shrink-0 [&_*[role=option]>span>svg]:text-muted-foreground/80 [&_*[role=option]>span]:end-2 [&_*[role=option]>span]:start-auto [&_*[role=option]>span]:flex [&_*[role=option]>span]:items-center [&_*[role=option]>span]:gap-2 [&_*[role=option]]:pe-8 [&_*[role=option]]:ps-2">
-        {taskCategories.map((item, index) => (
-          <SelectItem key={index} value={item.color}>
-            <span className="flex items-center gap-1 mr-2">
-              <StatusDot color={item.color} />
-              <span className="truncate">{item.label}</span>
-            </span>
-          </SelectItem>
-        ))}
-      </SelectContent>
-    </Select>
+    <React.Fragment>
+      <SelectRadix
+        defaultValue={subtask ? subtask.category.color : task.category.color}
+        onValueChange={(e) => {
+          const _category = taskCategories.find((item) => item.color === e);
+          if (subtask) {
+            dispatch(
+              updateSubTask({
+                id: task.id,
+                sub_task_id: subtask.id,
+                updated_sub_task: {
+                  category: _category,
+                },
+              }),
+            );
+          } else {
+            dispatch(
+              updateTask({
+                id: task.id,
+                key: date.timestamp,
+                updated_task: {
+                  title: task.title,
+                  category: _category,
+                },
+              }),
+            );
+          }
+        }}
+      >
+        <SelectTriggerRadix
+          icon={<></>}
+          className="border-none focus:ring-0 shadow-none w-fit p-0 h-6"
+        >
+          <SelectValueRadix placeholder="Select status" />
+        </SelectTriggerRadix>
+        <SelectContentRadix className="[&_*[role=option]>span>svg]:shrink-0 [&_*[role=option]>span>svg]:text-muted-foreground/80 [&_*[role=option]>span]:end-2 [&_*[role=option]>span]:start-auto [&_*[role=option]>span]:flex [&_*[role=option]>span]:items-center [&_*[role=option]>span]:gap-2 [&_*[role=option]]:pe-8 [&_*[role=option]]:ps-2">
+          {taskCategories.map((item, index) => (
+            <SelectItemRadix key={index} value={item.color}>
+              <span className="flex items-center gap-1 mr-2">
+                <StatusDot color={item.color} />
+                <span className="truncate">{item.label}</span>
+              </span>
+            </SelectItemRadix>
+          ))}
+        </SelectContentRadix>
+      </SelectRadix>
+    </React.Fragment>
   );
 }
 
@@ -2505,7 +2520,7 @@ import { SortableContext, arrayMove } from "@dnd-kit/sortable";
 import { createPortal } from "react-dom";
 
 import { debounce } from "lodash";
-function KanbanBoardTasks({ tasks: _tasks, date, active_task }) {
+function KanbanBoardTasks({ data, tasks: _tasks, date, active_task }) {
   const [tasks, setTasks] = useState<Task[]>(_tasks);
   const [activeTask, setActiveTask] = useState<Task | null>(null);
 
@@ -2596,6 +2611,7 @@ function KanbanBoardTasks({ tasks: _tasks, date, active_task }) {
         </div>
       )}
       <SelectFilter
+        data={data}
         date={date}
         value={value}
         setValue={setValue}
@@ -2929,7 +2945,7 @@ const ChildTask = React.memo(
         <div
           style={{ animationDelay: `${index * 0.07}s` }}
           className={cn(
-            "animate-roll-reveal [animation-fill-mode:backwards] p-2 relative flex items-start overflow-hidden py-2 mb-2 rounded-md border",
+            "animate-roll-reveal [animation-fill-mode:backwards] relative flex items-start overflow-hidden mb-2 ",
             active_task && todo.status !== "progress"
               ? "text-muted-foreground bg-muted/20 blur-sm transition-all duration-300"
               : active_task && todo.status === "progress"
@@ -2939,245 +2955,21 @@ const ChildTask = React.memo(
                   : "",
           )}
         >
-          {todo.status === "done" && (
-            <CircleCheckBig className="absolute top-0 -right-4 w-28 h-28 text-primary dark:text-primary opacity-30" />
-          )}
-          <div className=" ">
-            <div className="flex items-center gap-1.5 pl-0 pt-1">
-              <div className="">{children}</div>
-              {is_today ? (
-                <React.Fragment>
-                  {todo.status === "done" ? (
-                    <CircleCheckBig className="w-6 h-6 text-primary rounded-full" />
-                  ) : todo.status === "progress" ? (
-                    <button
-                      onClick={() => {
-                        const last_session_index = task?.sessions?.length - 1;
-                        const last_session = task?.sessions[last_session_index];
-                        const last_start = last_session?.log
-                          ?.filter((d) => d.name === "start") // Memfilter log yang bernama "start"
-                          .slice(-1)[0]; // Mengambil elemen terakhir
-
-                        const count_pause = last_session?.log?.filter(
-                          (d) => d.name === "pause",
-                        ).length; // Memfilter log yang bernama "start"
-                        if (count_pause === 2)
-                          return toast({
-                            title: "Error",
-                            description: `Maximal paused only two times`,
-                          });
-                        if (!last_start) return;
-
-                        const elapsed_time = Date.now() - last_start.time;
-
-                        dispatch(
-                          updateSessionTask({
-                            id: todo.id,
-                            key: date.timestamp,
-                            updated_session_task: {
-                              id: last_session.id,
-                              done: false,
-                              elapsed_time:
-                                elapsed_time + last_session.elapsed_time,
-                              log: [
-                                ...last_session.log,
-                                { time: Date.now(), name: "pause" },
-                              ],
-                            },
-                          }),
-                        );
-                      }}
-                      className={cn(
-                        "flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-destructive text-destructive-foreground",
-                        active_task &&
-                          "animate-roll-reveal [animation-fill-mode:backwards]",
-                      )}
-                    >
-                      <Pause className="h-5 w-5" />
-                    </button>
-                  ) : (
-                    <>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const last_session_index = task?.sessions?.length - 1;
-                          const last_session =
-                            task?.sessions[last_session_index];
-                          const last_pause = last_session?.log
-                            ?.filter((d) => d.name === "pause") // Memfilter log yang bernama "start"
-                            .slice(-1)[0]; // Mengambil elemen terakhir
-                          const last_done = last_session?.done;
-
-                          if (!last_session || last_done) {
-                            dispatch(
-                              updateSessionTask({
-                                id: todo.id,
-                                key: date.timestamp,
-                                updated_session_task: {
-                                  id: Date.now(),
-                                  elapsed_time: 0,
-                                  done: false,
-                                  log: [{ time: Date.now(), name: "start" }],
-                                },
-                              }),
-                            );
-                          } else {
-                            dispatch(
-                              updateSessionTask({
-                                id: todo.id,
-                                key: date.timestamp,
-                                updated_session_task: {
-                                  id: last_session.id,
-                                  elapsed_time: last_session.elapsed_time,
-                                  done: false,
-                                  log: [
-                                    ...last_session.log,
-                                    { time: Date.now(), name: "start" },
-                                  ],
-                                },
-                              }),
-                            );
-                          }
-                        }}
-                        className={cn(
-                          "flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary pl-0.5 text-primary-foreground",
-                          active_task &&
-                            "animate-roll-reveal [animation-fill-mode:backwards]",
-                        )}
-                      >
-                        <Play className="h-5 w-5" />
-                      </button>
-
-                      {/*<button
-                        type="button"
-                        onClick={() => {
-                          const last_session_index = task?.sessions?.length - 1;
-                          const last_session =
-                            task?.sessions[last_session_index];
-                          const last_start = last_session?.log
-                            ?.filter((d) => d.name === "start") // Memfilter log yang bernama "start"
-                            .slice(-1)[0]; // Mengambil elemen terakhir
-
-                          const elapsed_time = Date.now() - last_start.time;
-                          dispatch(
-                            updateSessionTask({
-                              id: todo.id,
-                              key: date.timestamp,
-                              updated_session_task: {
-                                id: last_session.id,
-                                done: true,
-                                elapsed_time:
-                                  elapsed_time + last_session.elapsed_time,
-                              },
-                            }),
-                          );
-                        }}
-                        className={cn(
-                          "flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-blue-500 pl-0.5 text-white",
-                          active_task &&
-                            "animate-roll-reveal [animation-fill-mode:backwards]",
-                        )}
-                      >
-                        <CheckCircle2 className="h-5 w-5" />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const last_session_index = task?.sessions?.length - 1;
-                          const last_session =
-                            task?.sessions[last_session_index];
-                          const last_start = last_session?.log
-                            ?.filter((d) => d.name === "start") // Memfilter log yang bernama "start"
-                            .slice(-1)[0]; // Mengambil elemen terakhir
-
-                          const elapsed_time =
-                            last_session.elapsed_time !== 0
-                              ? last_session.elapsed_time
-                              : Date.now() - last_start.time;
-
-                          dispatch(
-                            updateSessionTask({
-                              id: todo.id,
-                              key: date.timestamp,
-                              updated_session_task: {
-                                id: last_session.id,
-                                elapsed_time: elapsed_time,
-                                done: true,
-                              },
-                            }),
-                          );
-                        }}
-                        className={cn(
-                          "flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-blue-500 pl-0.5 text-white",
-                          active_task &&
-                            "animate-roll-reveal [animation-fill-mode:backwards]",
-                        )}
-                      >
-                        X<CheckCircle2 className="h-5 w-5" />
-                      </button>*/}
-                    </>
-                  )}
-                </React.Fragment>
-              ) : (
-                <button
-                  onClick={() => {
-                    dispatch(copyTask({ id: task.id, key: date.timestamp }));
-
-                    toast({
-                      title: "Added in today",
-                      description: `The task has been successfully added in today.`,
-                    });
-                  }}
-                  className="h-6 w-6 shrink-0 items-center justify-center rounded-full hover:bg-gray-200 dark:hover:bg-gray-500 "
-                >
-                  <ArrowRight />
-                </button>
+          <div className="rounded-lg border bg-card text-card-foreground shadow-sm w-full">
+            <div
+              className={cn(
+                "p-6 px-3 py-1.5 space-between flex gap-4 items-center flex-row border-b-2 border-secondary relative",
+                active_task && todo.status === "progress"
+                  ? " bg-gradient-to-r from-accent bg-muted"
+                  : " bg-gradient-to-l from-background bg-secondary",
               )}
-            </div>
-          </div>
-          <div className="w-full group">
-            <div className="relative flex w-full items-start">
-              {/*<AppRichTextEditor
-                defaultValue={todo.title}
-                handler={(v) => {
-                  dispatch(
-                    updateTask({
-                      id: task.id,
-                      key: date.timestamp,
-                      updated_task: {
-                        title: v,
-                      },
-                    }),
-                  );
-                }}
-              />*/}
-              <AutosizeTextarea
-                key={`title-${todo.id}`}
-                name="title"
-                defaultValue={todo.title}
-                onBlur={(e) => {
-                  dispatch(
-                    updateTask({
-                      id: task.id,
-                      key: date.timestamp,
-                      updated_task: {
-                        title: e.target.value,
-                      },
-                    }),
-                  );
-                }}
-                style={{ resize: "none" }}
-                className="w-full bg-transparent p-1 outline-none text-md border-none focus-visible:ring-offset-0 focus-visible:ring-0 outline-none"
-                minHeight={20}
-                maxHeight={800}
-                placeholder="Untitled"
-                autoComplete="off"
-              />
-              <div className="ml-auto flex items-center gap-2 pr-2 pt-2">
+            >
+              <div className="flex items-center gap-x-2">{children}</div>
+              <div className="ml-auto flex items-center">
                 {todo.sub_tasks.length > 0 && (
                   <CollapsibleTrigger asChild>
                     <Badge
-                      className="flex flex-1 items-center gap-1 justify-between text-sm font-medium transition-all text-left [&[data-state=close]>svg.chev]:block [&[data-state=open]>svg.cross]:block [&[data-state=open]>svg.chev]:hidden"
+                      className="flex flex-1 border-none items-center gap-1 justify-between text-sm font-medium transition-all text-left [&[data-state=close]>svg.chev]:block [&[data-state=open]>svg.cross]:block [&[data-state=open]>svg.chev]:hidden"
                       variant="outline"
                     >
                       <ChevronsUpDown className="chev h-4 w-4 shrink-0 transition-all duration-200" />
@@ -3186,6 +2978,7 @@ const ChildTask = React.memo(
                     </Badge>
                   </CollapsibleTrigger>
                 )}
+                <Separator className="w-2" orientation="vertical" />
                 <DropdownMenu>
                   <DropdownMenuTrigger>
                     <EllipsisVertical className="w-4 h-4" />
@@ -3288,120 +3081,277 @@ const ChildTask = React.memo(
                 </DropdownMenu>
               </div>
             </div>
-            <div>
-              <div className="relative ml-1 block py-0.5 ">
-                <div className="flex items-end">
-                  <div className="flex items-center justify-start gap-1 h-4">
-                    {new Array(16).fill(null).map((_, index) => {
-                      const active = todo?.sessions?.filter(
-                        (d) => d?.done,
-                      )?.length;
+            <div className="p-2">
+              <div className="flex items-start gap-1 px-1">
+                {is_today ? (
+                  <React.Fragment>
+                    {todo.status === "done" ? (
+                      <CircleCheckBig className="w-6 h-6 text-primary rounded-full" />
+                    ) : todo.status === "progress" ? (
+                      <button
+                        onClick={() => {
+                          const last_session_index = task?.sessions?.length - 1;
+                          const last_session =
+                            task?.sessions[last_session_index];
+                          const last_start = last_session?.log
+                            ?.filter((d) => d.name === "start") // Memfilter log yang bernama "start"
+                            .slice(-1)[0]; // Mengambil elemen terakhir
 
-                      return (
-                        <div className="relative inline-flex gap-1" key={index}>
-                          <button
-                            onClick={() => {
+                          const count_pause = last_session?.log?.filter(
+                            (d) => d.name === "pause",
+                          ).length; // Memfilter log yang bernama "start"
+                          if (count_pause === 2)
+                            return toast({
+                              title: "Error",
+                              description: `Maximal paused only two times`,
+                            });
+                          if (!last_start) return;
+
+                          const elapsed_time = Date.now() - last_start.time;
+
+                          dispatch(
+                            updateSessionTask({
+                              id: todo.id,
+                              key: date.timestamp,
+                              updated_session_task: {
+                                id: last_session.id,
+                                done: false,
+                                elapsed_time:
+                                  elapsed_time + last_session.elapsed_time,
+                                log: [
+                                  ...last_session.log,
+                                  { time: Date.now(), name: "pause" },
+                                ],
+                              },
+                            }),
+                          );
+                        }}
+                        className={cn(
+                          "flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-destructive text-destructive-foreground",
+                          active_task &&
+                            "animate-roll-reveal [animation-fill-mode:backwards]",
+                        )}
+                      >
+                        <Pause className="h-5 w-5" />
+                      </button>
+                    ) : (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const last_session_index =
+                              task?.sessions?.length - 1;
+                            const last_session =
+                              task?.sessions[last_session_index];
+                            const last_pause = last_session?.log
+                              ?.filter((d) => d.name === "pause") // Memfilter log yang bernama "start"
+                              .slice(-1)[0]; // Mengambil elemen terakhir
+                            const last_done = last_session?.done;
+
+                            if (!last_session || last_done) {
                               dispatch(
-                                updateTask({
-                                  id: task.id,
+                                updateSessionTask({
+                                  id: todo.id,
                                   key: date.timestamp,
-                                  updated_task: {
-                                    title: todo.title,
-                                    target_sessions: index + 1,
+                                  updated_session_task: {
+                                    id: Date.now(),
+                                    elapsed_time: 0,
+                                    done: false,
+                                    log: [{ time: Date.now(), name: "start" }],
                                   },
                                 }),
                               );
-                            }}
-                            type="button"
-                            style={{ animationDelay: `${index * 0.03}s` }}
-                            className={cn(
-                              "h-[12px] w-[12px] shrink-0 cursor-pointer rounded-full ",
-                              active >= index + 1
-                                ? "bg-chart-2"
-                                : todo?.target_sessions >= index + 1
-                                  ? "bg-primary/30"
-                                  : todo.status === "progress" &&
-                                      active === index
-                                    ? "bg-chart-1"
-                                    : "bg-muted hover:bg-primary/50 duration-300 hidden group-hover:block transition-all duration-300 animate-roll-reveal [animation-fill-mode:backwards] ",
-                            )}
-                          />
-
-                          {todo.status === "progress" && active === index && (
-                            <React.Fragment>
-                              <div className="w-3 h-3 bg-chart-1 rounded-full absolute top-0 left-0 animate-ping" />
-                              <div className="h-[12px] w-[12px]  bg-chart-1 rounded-full absolute top-0 left-0 animate-pulse" />
-                            </React.Fragment>
+                            } else {
+                              dispatch(
+                                updateSessionTask({
+                                  id: todo.id,
+                                  key: date.timestamp,
+                                  updated_session_task: {
+                                    id: last_session.id,
+                                    elapsed_time: last_session.elapsed_time,
+                                    done: false,
+                                    log: [
+                                      ...last_session.log,
+                                      { time: Date.now(), name: "start" },
+                                    ],
+                                  },
+                                }),
+                              );
+                            }
+                          }}
+                          className={cn(
+                            "flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary pl-0.5 text-primary-foreground",
+                            active_task &&
+                              "animate-roll-reveal [animation-fill-mode:backwards]",
                           )}
-                        </div>
-                      );
-                    })}
-
-                    <button
-                      style={{ animationDelay: `${16 * 0.03}s` }}
-                      onClick={() => {
-                        dispatch(
-                          updateTask({
-                            id: task.id,
-                            key: date.timestamp,
-                            updated_task: {
-                              title: todo.title,
-                              target_sessions: 0,
-                            },
-                          }),
-                        );
-                      }}
-                      className="h-3 w-3 shrink-0 cursor-pointer rounded-full bg-destructive text-destructive-foreground flex items-center justify-center hidden group-hover:flex  animate-roll-reveal [animation-fill-mode:backwards] "
-                    >
-                      <X />
-                    </button>
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-between gap-x-1.5 pr-2 text-sm mt-1">
-                  <div className="flex items-center gap-x-1.5">
-                    {task.status !== "progress" && task.sessions.length > 0 && (
-                      <Popover>
-                        <PopoverTrigger>
-                          <History className="w-4 h-4 text-muted-foreground" />
-                        </PopoverTrigger>
-                        <PopoverContent className="max-h-[40vh] overflow-y-auto py-0">
-                          <TimelineInfo sessions={task.sessions} />
-                        </PopoverContent>
-                      </Popover>
+                        >
+                          <Play className="h-5 w-5" />
+                        </button>
+                      </>
                     )}
-                    <div
-                      className={
-                        todo?.status === "progress" ? "todo-progress" : ""
-                      }
-                    >
-                      {new Date(totalSessionTime).toISOString().substr(11, 8)}
+                  </React.Fragment>
+                ) : (
+                  <button
+                    onClick={() => {
+                      dispatch(copyTask({ id: task.id, key: date.timestamp }));
+
+                      toast({
+                        title: "Added in today",
+                        description: `The task has been successfully added in today.`,
+                      });
+                    }}
+                    className="h-6 w-6 shrink-0 items-center justify-center rounded-full hover:bg-gray-200 dark:hover:bg-gray-500 "
+                  >
+                    <ArrowRight />
+                  </button>
+                )}
+
+                <AutosizeTextarea
+                  key={`title-${todo.id}`}
+                  name="title"
+                  defaultValue={todo.title}
+                  onBlur={(e) => {
+                    dispatch(
+                      updateTask({
+                        id: task.id,
+                        key: date.timestamp,
+                        updated_task: {
+                          title: e.target.value,
+                        },
+                      }),
+                    );
+                  }}
+                  style={{ resize: "none" }}
+                  className="py-0.5 px-1.5 w-full bg-transparent outline-none text-md border-none focus-visible:ring-offset-0 focus-visible:ring-0 outline-none"
+                  minHeight={20}
+                  maxHeight={800}
+                  placeholder="Untitled"
+                  autoComplete="off"
+                />
+              </div>
+              <div className="w-full group px-2">
+                <div className="relative block py-0.5 ">
+                  <div className="flex items-end">
+                    <div className="flex items-center justify-start gap-1 h-4">
+                      {new Array(16).fill(null).map((_, index) => {
+                        const active = todo?.sessions?.filter(
+                          (d) => d?.done,
+                        )?.length;
+
+                        return (
+                          <div
+                            className="relative inline-flex gap-1"
+                            key={index}
+                          >
+                            <button
+                              onClick={() => {
+                                dispatch(
+                                  updateTask({
+                                    id: task.id,
+                                    key: date.timestamp,
+                                    updated_task: {
+                                      title: todo.title,
+                                      target_sessions: index + 1,
+                                    },
+                                  }),
+                                );
+                              }}
+                              type="button"
+                              style={{ animationDelay: `${index * 0.03}s` }}
+                              className={cn(
+                                "h-[12px] w-[12px] shrink-0 cursor-pointer rounded-full ",
+                                active >= index + 1
+                                  ? "bg-chart-2"
+                                  : todo?.target_sessions >= index + 1
+                                    ? "bg-primary/30"
+                                    : todo.status === "progress" &&
+                                        active === index
+                                      ? "bg-chart-1"
+                                      : "bg-muted hover:bg-primary/50 duration-300 hidden group-hover:block transition-all duration-300 animate-roll-reveal [animation-fill-mode:backwards] ",
+                              )}
+                            />
+
+                            {todo.status === "progress" && active === index && (
+                              <React.Fragment>
+                                <div className="w-3 h-3 bg-chart-1 rounded-full absolute top-0 left-0 animate-ping" />
+                                <div className="h-[12px] w-[12px]  bg-chart-1 rounded-full absolute top-0 left-0 animate-pulse" />
+                              </React.Fragment>
+                            )}
+                          </div>
+                        );
+                      })}
+
+                      <button
+                        style={{ animationDelay: `${16 * 0.03}s` }}
+                        onClick={() => {
+                          dispatch(
+                            updateTask({
+                              id: task.id,
+                              key: date.timestamp,
+                              updated_task: {
+                                title: todo.title,
+                                target_sessions: 0,
+                              },
+                            }),
+                          );
+                        }}
+                        className="h-3 w-3 shrink-0 cursor-pointer rounded-full bg-destructive text-destructive-foreground flex items-center justify-center hidden group-hover:flex  animate-roll-reveal [animation-fill-mode:backwards] "
+                      >
+                        <X />
+                      </button>
                     </div>
                   </div>
-                  <SelectDemo task={task} date={date} />
-                </div>
-                {!is_today && (
-                  <div className="flex">
-                    <button
-                      onClick={() => {
-                        dispatch(
-                          copyTask({ id: task.id, key: date.timestamp }),
-                        );
 
-                        toast({
-                          title: "Added in today",
-                          description: `The task has been successfully added in today.`,
-                        });
-                      }}
-                      className="flex items-center gap-1 rounded bg-gray-100 px-1.5 py-0.5 text-xs hover:bg-gray-200 dark:bg-gray-600 dark:hover:bg-gray-500 "
-                    >
-                      Move to today <ArrowRight className="w-4 h-4" />
-                    </button>
+                  <div className="flex items-center gap-x-1.5 mt-1.5 justify-between">
+                    <div className="flex items-center gap-x-1.5">
+                      {task.status !== "progress" &&
+                        task.sessions.length > 0 && (
+                          <Popover>
+                            <PopoverTrigger>
+                              <History className="w-4 h-4 text-muted-foreground" />
+                            </PopoverTrigger>
+                            <PopoverContent className="max-h-[40vh] overflow-y-auto py-0">
+                              <TimelineInfo sessions={task.sessions} />
+                            </PopoverContent>
+                          </Popover>
+                        )}
+                      <div
+                        className={
+                          todo?.status === "progress" ? "todo-progress" : ""
+                        }
+                      >
+                        {new Date(totalSessionTime).toISOString().substr(11, 8)}
+                      </div>
+                    </div>
+                    <SelectDemo task={task} date={date} />
                   </div>
-                )}
+                  {!is_today && (
+                    <div className="flex">
+                      <button
+                        onClick={() => {
+                          dispatch(
+                            copyTask({ id: task.id, key: date.timestamp }),
+                          );
+
+                          toast({
+                            title: "Added in today",
+                            description: `The task has been successfully added in today.`,
+                          });
+                        }}
+                        className="flex items-center gap-1 rounded bg-gray-100 px-1.5 py-0.5 text-xs hover:bg-gray-200 dark:bg-gray-600 dark:hover:bg-gray-500 "
+                      >
+                        Move to today <ArrowRight className="w-4 h-4" />
+                      </button>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           </div>
+          {todo.status === "done" && (
+            <CircleCheckBig className="absolute top-0 -right-4 w-28 h-28 text-primary dark:text-primary opacity-30" />
+          )}
+          <div className=" "></div>
         </div>
 
         {todo.sub_tasks.length > 0 && (
@@ -3491,7 +3441,7 @@ function SubTaskComponentCard({
           size="icon"
           {...attributes}
           {...listeners}
-          className="text-secondary-foreground/50 h-auto cursor-grab h-5 w-5"
+          className="group-hover:block hidden text-muted-foreground h-auto cursor-grab absolute top-1/2 transform -translate-y-1/2 left-2  z-20 h-5 w-5 mt-1.5"
         >
           <span className="sr-only">Move task</span>
           <GripVertical />
@@ -3509,7 +3459,7 @@ const ChildSubTask = React.memo(
       <div
         style={{ animationDelay: `${index * 0.07}s` }}
         className={cn(
-          "animate-slide-top [animation-fill-mode:backwards] ml-2.5 sm:ml-5 relative flex items-start overflow-hidden py-2 mb-1.5 rounded-md border",
+          "group animate-slide-top [animation-fill-mode:backwards] ml-2.5 sm:ml-5 relative flex items-start overflow-hidden p-2 mb-1.5 rounded-md border",
           active_task && todo.status !== "progress"
             ? "text-muted-foreground opacity-80"
             : active_task && todo.status === "progress"
@@ -3522,13 +3472,7 @@ const ChildSubTask = React.memo(
         {subtask.checked && (
           <CircleCheckBig className="absolute top-0 -right-4 w-28 h-28 text-green-500 dark:text-green-400 opacity-30" />
         )}
-        <div
-          className="-mt-0 h-full cursor-pointer px-1 py-1 text-gray-300 hover:text-gray-800 dark:text-gray-600 dark:hover:text-gray-400"
-          style={{ touchAction: "none" }}
-          draggable="true"
-        >
-          {children}
-        </div>
+        {children}
         <div className="ml-1">
           <div className="flex gap-2 pl-0 pt-1 mr-2 mt-1">
             <input
@@ -3563,21 +3507,6 @@ const ChildSubTask = React.memo(
         </div>
         <div className="w-full">
           <div className="relative flex w-full items-start">
-            {/*<AppRichTextEditor
-              defaultValue={subtask.title}
-              handler={(v) => {
-                dispatch(
-                  updateSubTask({
-                    id: task.id,
-                    key: date.timestamp,
-                    sub_task_id: subtask.id,
-                    updated_sub_task: {
-                      title: v,
-                    },
-                  }),
-                );
-              }}
-            />*/}
             <AutosizeTextarea
               defaultValue={subtask.title}
               key={`sub_tasks[${index}].title`} // Dinamis berdasarkan index
