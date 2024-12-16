@@ -109,7 +109,7 @@ const todoReducer = (
         id: Date.now(),
         checked: false,
         title: "",
-        category: { label: "", color: "gray" },
+        category: { label: "General", color: "#9ca3af" },
       };
 
       const date_key = get_formatted_date(action.payload?.key);
