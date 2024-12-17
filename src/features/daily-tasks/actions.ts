@@ -18,9 +18,7 @@ const SubTaskSchema = z.object({
 
 const TaskSchema = z.object({
   id: z.number(),
-  status: z
-    .enum(["draft", "paused", "progress", "done", "cancel"])
-    .default("draft"),
+  status: z.enum(["pending", "progress", "done", "cancel"]).default("pending"),
   title: EmptyString,
   category: z.object({ label: EmptyString, color: EmptyString }),
   target_sessions: z.number().default(0),
@@ -30,14 +28,6 @@ const TaskSchema = z.object({
     .array(
       z.object({
         id: z.number(),
-        elapsed_time: z.number().default(0),
-        done: z.boolean().nullable(),
-        log: z.array(
-          z.object({
-            name: z.string(),
-            time: z.number(),
-          }),
-        ),
       }),
     )
     .default([]),

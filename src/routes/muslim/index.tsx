@@ -126,6 +126,7 @@ export const SuratView = () => {
           <TabsTrigger value="puzzle">Puzzle</TabsTrigger>
         </TabsList>
         <TabsContent value="baca">
+          {/*<Debug data={data} />*/}
           <AyatListWithFavorites data={data} initialPage={initialPage} />
         </TabsContent>
         <TabsContent value="hafalan">
@@ -463,9 +464,11 @@ const AyatListHafalan: React.FC<AyatListProps> = ({
   };
 
   // Fungsi untuk pindah ke halaman berikutnya
+  const last_surah = data[data.length - 1];
+  const start_surah = data[0];
   const nextPage = () => {
-    if (totalPagesSurat === currentPage) {
-      navigate(`/muslim/quran-surat/${currentPage + 1}`, {
+    if (last_surah.page_number === currentPage) {
+      navigate(`/muslim/quran-surat/${last_surah.sura_id + 1}`, {
         preventScrollReset: false,
       });
     }
@@ -477,8 +480,8 @@ const AyatListHafalan: React.FC<AyatListProps> = ({
 
   // Fungsi untuk pindah ke halaman sebelumnya
   const prevPage = () => {
-    if (initialPage === currentPage) {
-      navigate(`/muslim/quran-surat/${currentPage - 1}`, {
+    if (start_surah.page_number === currentPage) {
+      navigate(`/muslim/quran-surat/${start_surah.sura_id - 1}`, {
         preventScrollReset: false,
       });
     }
@@ -587,9 +590,11 @@ const AyatListPuzzle: React.FC<AyatListProps> = ({ data, initialPage }) => {
   const filteredData = data.filter((ayat) => ayat.page_number === currentPage);
 
   // Fungsi untuk pindah ke halaman berikutnya
+  const last_surah = data[data.length - 1];
+  const start_surah = data[0];
   const nextPage = () => {
-    if (totalPagesSurat === currentPage) {
-      navigate(`/muslim/quran-surat/${currentPage + 1}`, {
+    if (last_surah.page_number === currentPage) {
+      navigate(`/muslim/quran-surat/${last_surah.sura_id + 1}`, {
         preventScrollReset: false,
       });
     }
@@ -601,8 +606,8 @@ const AyatListPuzzle: React.FC<AyatListProps> = ({ data, initialPage }) => {
 
   // Fungsi untuk pindah ke halaman sebelumnya
   const prevPage = () => {
-    if (initialPage === currentPage) {
-      navigate(`/muslim/quran-surat/${currentPage - 1}`, {
+    if (start_surah.page_number === currentPage) {
+      navigate(`/muslim/quran-surat/${start_surah.sura_id - 1}`, {
         preventScrollReset: false,
       });
     }
@@ -739,9 +744,11 @@ const AyatListWithFavorites: React.FC<AyatListProps> = ({
   };
 
   // Fungsi untuk pindah ke halaman berikutnya
+  const last_surah = data[data.length - 1];
+  const start_surah = data[0];
   const nextPage = () => {
-    if (totalPagesSurat === currentPage) {
-      navigate(`/muslim/quran-surat/${currentPage + 1}`, {
+    if (last_surah.page_number === currentPage) {
+      navigate(`/muslim/quran-surat/${last_surah.sura_id + 1}`, {
         preventScrollReset: false,
       });
     }
@@ -753,8 +760,8 @@ const AyatListWithFavorites: React.FC<AyatListProps> = ({
 
   // Fungsi untuk pindah ke halaman sebelumnya
   const prevPage = () => {
-    if (initialPage === currentPage) {
-      navigate(`/muslim/quran-surat/${currentPage - 1}`, {
+    if (start_surah.page_number === currentPage) {
+      navigate(`/muslim/quran-surat/${start_surah.sura_id - 1}`, {
         preventScrollReset: false,
       });
     }
@@ -772,8 +779,7 @@ const AyatListWithFavorites: React.FC<AyatListProps> = ({
         return (
           <li
             key={ayat.aya_id}
-            style={{ animationDelay: `${index * 0.1}s` }}
-            className={`animate-slide-top [animation-fill-mode:backwards] group relative py-5 pr-4 pl-2 sm:px-5 hover:bg-accent rounded-md ${
+            className={`group relative py-5 pr-4 pl-2 sm:px-5 hover:bg-accent rounded-md ${
               isLastRead ? "bg-muted" : ""
             }`}
           >

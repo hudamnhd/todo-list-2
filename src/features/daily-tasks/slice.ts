@@ -30,15 +30,13 @@ const todoReducer = (
   switch (action.type) {
     case "ADD_TASK": {
       const payload: Task = {
-        id: Date.now(),
-        status: "draft",
+        id: new Date().toISOString(), // created_at base on id
+        status: "pending",
         title: "",
         category: { label: "General", color: "#9ca3af" },
         target_sessions: 0,
-        done: null,
         sessions: [],
         sub_tasks: [],
-        created_at: Date.now(),
         updated_at: null,
       };
 
@@ -78,12 +76,12 @@ const todoReducer = (
           // Membuat update pada sub_tasks dan updatedAt tanpa merubah state lama
           const payload = {
             ...original_data,
-            id: Date.now(),
+            id: new Date().toISOString(),
             status: "draft" as "draft",
             start_at: null,
             sessions: [],
             sub_tasks,
-            created_at: Date.now(),
+            created_at: new Date().toISOString(),
             updated_at: null,
           };
 
@@ -106,7 +104,7 @@ const todoReducer = (
     }
     case "ADD_SUB_TASK": {
       const payload: SubTask = {
-        id: Date.now(),
+        id: new Date().toISOString(),
         checked: false,
         title: "",
         category: { label: "General", color: "#9ca3af" },
@@ -130,7 +128,7 @@ const todoReducer = (
           const updatedTask = {
             ...original_data,
             sub_tasks: [...oldSubTasks, payload],
-            updated_at: Date.now(),
+            updated_at: new Date().toISOString(),
           };
 
           // Update tasks dengan data baru
@@ -170,7 +168,7 @@ const todoReducer = (
           const updatedTask = {
             ...task,
             sub_tasks: filteredSubTasks,
-            updated_at: Date.now(),
+            updated_at: new Date().toISOString(),
           };
 
           return {
@@ -212,7 +210,7 @@ const todoReducer = (
           const updatedTask = {
             ...task,
             sub_tasks: updatedSubTasks,
-            updated_at: Date.now(),
+            updated_at: new Date().toISOString(),
           };
 
           return {
@@ -235,11 +233,11 @@ const todoReducer = (
       const { id, updated_session_task } = action.payload;
       const date_key = get_formatted_date(action.payload?.key);
       const formatted_date = date_key.key;
-      const payload = {
-        id: Date.now(),
-        elapsed_time: 0,
-        log: [{ time: Date.now(), name: "start" }],
-      };
+
+      // Menghitung waktu 24.9 menit yang lalu dan mengonversinya ke ISO string
+      const currentTime = new Date(Date.now()).toISOString();
+
+      const payload = currentTime;
 
       if (state.tasks[formatted_date]) {
         const taskIndex = state.tasks[formatted_date].findIndex(
@@ -248,51 +246,23 @@ const todoReducer = (
 
         if (taskIndex !== -1) {
           const task = state.tasks[formatted_date][taskIndex];
-          const sessions_length = task.sessions.length > 0;
 
-          const status = sessions_length
-            ? updated_session_task?.log?.length > 0 // Pastikan log tidak kosong
-              ? updated_session_task?.log[updated_session_task?.log.length - 1]
-                  ?.name // Ambil nama status jika ada
-              : "start" // Jika log kosong, status adalah "start"
-            : "start"; // Jika sessions_length falsy, status adalah "start"
+          const exists = task.sessions.some(
+            (s) => s === updated_session_task.id,
+          );
+          const updatedSubTasks = exists
+            ? task.sessions.filter((s) => s !== updated_session_task.id)
+            : [...task.sessions, payload];
 
-          const compare_status =
-            sessions_length &&
-            updated_session_task?.log?.length > 1 && // Pastikan log memiliki lebih dari 1 item
-            updated_session_task?.log[updated_session_task?.log.length - 1]
-              ?.name ===
-              updated_session_task?.log[updated_session_task?.log.length - 2]
-                ?.name; // Bandingkan nama status log terakhir dan kedua terakhir
+          // Tentukan status task berdasarkan kondisi
+          const status = exists ? "pending" : "progress";
 
-          if (compare_status) return state;
-
-          const updatedSubTasks = task.sessions.some(
-            (s) => s.id === updated_session_task.id,
-          )
-            ? task.sessions.map((s) =>
-                s.id === updated_session_task.id
-                  ? {
-                      ...s,
-                      ...updated_session_task,
-                    } // Update session yang ID-nya cocok
-                  : s,
-              )
-            : [...task.sessions, payload]; // Jika ID tidak ditemukan, tambahkan payload ke sessions
-
-          const change_status = updated_session_task?.done
-            ? "draft"
-            : status === "start"
-              ? "progress"
-              : status === "pause"
-                ? "paused"
-                : "draft";
-
+          // Update task dengan status yang sesuai
           const updatedTask = {
-            ...task, // Spread the task object to create a new object
-            sessions: updatedSubTasks, // Set the new sessions array
-            status: change_status,
-            updated_at: Date.now(),
+            ...task, // Spread task untuk membuat objek baru
+            sessions: updatedSubTasks, // Setel array sessions yang baru
+            status: status, // Tentukan status berdasarkan kondisi
+            updated_at: new Date().toISOString(), // Waktu pembaruan
           };
 
           // Ensure we create a new tasks array, modifying only the task that was updated
@@ -335,7 +305,7 @@ const todoReducer = (
           ...taskToUpdate,
           ...action.payload.updated_task, // Data yang ingin diupdate dari payload
           sessions: [...taskToUpdate.sessions, ...new_session],
-          updated_at: Date.now(),
+          updated_at: new Date().toISOString(),
         };
 
         // Buat array baru dengan task yang sudah diperbarui

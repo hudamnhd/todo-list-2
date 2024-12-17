@@ -102,7 +102,7 @@ const generateTodo = (date) => {
     sessions,
     status: faker.helpers.arrayElement(["paused", "completed"]),
     title: faker.lorem.words(2),
-    columnId: faker.helpers.arrayElement(["done", "todo"]),
+    columnId: faker.helpers.arrayElement(["completed", "todo"]),
     category: {
       label: faker.helpers.arrayElement(["General"]),
       color: faker.helpers.arrayElement(["#9ca3af"]),
@@ -321,6 +321,7 @@ const TodoNavigator = ({ data }) => {
   };
 
   const active_task = findTodosByStatusWithReduce(data, "progress");
+  // const active_task = checkSessionStatus(data);
   const all_session = calculateGlobalSessionCount(data);
   const streak_data = calculateStreak(data);
   // This could be useState, useOptimistic, or other state
@@ -350,18 +351,51 @@ const TodoNavigator = ({ data }) => {
           streak_data={streak_data}
         />
 
-        <KanbanBoardTasks
-          data={data}
-          tasks={todos}
-          date={date_key}
-          active_task={active_task}
-          all_session={all_session}
-          streak_data={streak_data}
-        />
+        <BreakState data={todos} />
+        <div id="container-task">
+          <KanbanBoardTasks
+            data={data}
+            tasks={todos}
+            date={date_key}
+            active_task={active_task}
+            all_session={all_session}
+            streak_data={streak_data}
+          />
+        </div>
 
         <Unload data={data} date={date_key} active_task={active_task} />
         {/*<Debug data={todos} />*/}
       </div>
+    </div>
+  );
+};
+
+const BreakState = () => {
+  return (
+    <div
+      id="container-break-time"
+      style={{ display: "none" }}
+      className="flex mx-auto w-full flex-col items-center justify-center rounded py-20 text-center text-xl "
+    >
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width={50}
+        height={50}
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth={2}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        className="lucide lucide-coffee text-gray-600"
+      >
+        <path d="M10 2v2" />
+        <path d="M14 2v2" />
+        <path d="M16 8a1 1 0 0 1 1 1v8a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4V9a1 1 0 0 1 1-1h14a4 4 0 1 1 0 8h-1" />
+        <path d="M6 2v2" />
+      </svg>
+      Nikmati istirahatmu! Lupakan sejenak tasks yang ada, relax!
+      <div className="mt-2 text-base">Kamu sedang break untuk 5 menit.</div>
     </div>
   );
 };
@@ -729,26 +763,53 @@ const TaskApp = ({
     0,
   );
 
+  const sessionDuration = 25 * 60 * 1000; // 25 menit
   // Fungsi untuk menghitung total sesi dari seluruh todos
   const calculateTotalSessions = (todos: Array<{ sessions: Array<any> }>) => {
     return todos.reduce(
       (total_sessions, todo) =>
-        total_sessions + todo.sessions.filter((d) => d?.done).length || 0,
+        total_sessions +
+          todo.sessions.filter((d) => d + sessionDuration < Date.now())
+            .length || 0,
       0,
     );
   };
 
   const total_sessions = calculateTotalSessions(todos);
   const calculateTotalTime = (
-    todos: Array<{ sessions: Array<{ time: number }> }>,
+    todos: Array<{ sessions: Array<number>; completed_at?: number }>,
   ) => {
+    // Durasi sesi normal (misalnya 25 menit) dalam milidetik
+    const sessionDuration = 25 * 60 * 1000; // 25 menit
+
     return todos.reduce((total_elapsed_time, todo) => {
-      // Jumlahkan time dari setiap session di todo
       const sessionTime = todo.sessions.reduce(
-        (sessionTotal, session) => sessionTotal + session?.elapsed_time || 0,
+        (sessionTotal, session, index, sessions) => {
+          // Pastikan session time lebih besar dari Date.now()
+          if (session + sessionDuration < Date.now()) {
+            // Menjumlahkan durasi sesi biasa (25 menit) ke sessionTotal
+            sessionTotal += sessionDuration;
+
+            // Jika ini adalah sesi terakhir dan ada completed_at
+            if (index === sessions.length - 1 && todo.completed_at) {
+              const lastSessionTime = sessions[index];
+              const timeDifference = todo.completed_at - lastSessionTime;
+
+              // Jika jarak antara completed_at dan waktu sesi terakhir kurang dari durasi normal (25 menit),
+              // kurangi durasi sesi terakhir
+              if (timeDifference > 0 && timeDifference < sessionDuration) {
+                sessionTotal -= sessionDuration - timeDifference; // Kurangi sisa waktu dari sesi terakhir
+              }
+            }
+          }
+
+          return sessionTotal;
+        },
         0,
       );
-      return total_elapsed_time + sessionTime; // Tambahkan session time ke total
+
+      // Tambahkan sessionTime ke total_elapsed_time untuk semua task
+      return total_elapsed_time + sessionTime;
     }, 0);
   };
 
@@ -970,29 +1031,52 @@ function showNotification(title: string, description: string) {
 }
 
 const TodoTimer = ({
-  todos,
   date,
+  todos,
   active_task,
 }: { todos: Task[]; date: any; active_task: Task }) => {
   const dispatch = useAppDispatch();
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const activeTaskRef = useRef(null);
+  const FIVE_MINUTES = 5 * 60 * 1000; // 25 menit dalam milidetik
+  const [break_time, set_break_time] = useState(null);
   let progress = 0;
 
-  const pauseTodo = todos.find((todo) => todo.status === "paused");
+  if (activeTaskRef.current) {
+    const filter = todos.find((d) => d.id === activeTaskRef.current?.id);
+    if ((filter && filter.status === "completed") || !filter) {
+      const circleElement = document.getElementById("progress-circle");
+      if (circleElement) {
+        circleElement.setAttribute("stroke-dashoffset", "0");
+      }
+
+      const timerFields = document.querySelectorAll(".todo-progress");
+      for (const timerField of timerFields) {
+        if (timerField instanceof HTMLDivElement) {
+          timerField.innerHTML = "00:00";
+        }
+      }
+      activeTaskRef.current = null;
+    }
+  }
 
   useEffect(() => {
-    if (active_task) {
-      const task = active_task;
+    const task = active_task;
+    const sessions_length = task?.sessions?.length > 0;
+    if (active_task && sessions_length) {
+      const last_start = sessions_length
+        ? task.sessions[task.sessions.length - 1]
+        : null;
 
-      const last_session_index = task?.sessions?.length - 1;
-      const last_session = task?.sessions[last_session_index];
-      const last_start = last_session?.log
-        ?.filter((d) => d.name === "start") // Memfilter log yang bernama "start"
-        .slice(-1)[0]; // Mengambil elemen terakhir
-
-      if (!timerRef.current) {
+      if (!timerRef.current && last_start) {
         timerRef.current = setInterval(() => {
-          const updatedTotalTime = Date.now() - last_start.time;
+          const lastStartDate = new Date(last_start);
+
+          // Dapatkan waktu sekarang dalam milidetik
+          const currentTime = Date.now();
+
+          // Hitung selisih waktu (total waktu yang telah berlalu dalam milidetik)
+          const updatedTotalTime = currentTime - lastStartDate.getTime();
 
           progress = Math.min(
             (updatedTotalTime / TWENTY_FIVE_MINUTES) * circumference,
@@ -1020,6 +1104,7 @@ const TodoTimer = ({
           document.title = `${timer} ${active_task.title ? active_task.title.slice(0, 10) : "Untitled"}`;
 
           if (updatedTotalTime >= TWENTY_FIVE_MINUTES) {
+            activeTaskRef.current = active_task;
             clearInterval(timerRef.current);
 
             const notif = {
@@ -1032,13 +1117,11 @@ const TodoTimer = ({
             showNotification(notif.title, notif.description);
 
             dispatch(
-              updateSessionTask({
-                id: task.id,
+              updateTask({
+                id: active_task.id,
                 key: date.timestamp,
-                updated_session_task: {
-                  id: last_session.id,
-                  elapsed_time: TWENTY_FIVE_MINUTES,
-                  done: true,
+                updated_task: {
+                  status: "pending",
                 },
               }),
             );
@@ -1053,6 +1136,67 @@ const TodoTimer = ({
       }
     }
 
+    if (break_time) {
+      const container_task = document.getElementById("container-task");
+      const container_break_time = document.getElementById(
+        "container-break-time",
+      );
+      timerRef.current = setInterval(() => {
+        const updatedTotalTime = Date.now() - break_time;
+
+        progress = Math.min(
+          (updatedTotalTime / FIVE_MINUTES) * circumference,
+          circumference,
+        );
+
+        const timer = new Date(updatedTotalTime).toISOString().substr(14, 5);
+
+        // Update DOM manually
+
+        if (
+          container_task instanceof HTMLDivElement &&
+          container_task instanceof HTMLDivElement
+        ) {
+          container_break_time.style.display = "flex";
+          container_task.style.display = "none";
+        }
+        const circleElement = document.getElementById("progress-circle");
+        if (circleElement) {
+          circleElement.setAttribute(
+            "stroke-dashoffset",
+            (circumference - progress).toString(),
+          );
+        }
+
+        const timerFields = document.querySelectorAll(".todo-progress");
+        for (const timerField of timerFields) {
+          if (timerField instanceof HTMLDivElement) {
+            timerField.innerHTML = timer;
+          }
+        }
+
+        document.title = `${timer} Break`;
+
+        if (updatedTotalTime >= FIVE_MINUTES) {
+          clearInterval(timerRef.current);
+          set_break_time(null);
+
+          if (
+            container_task instanceof HTMLDivElement &&
+            container_task instanceof HTMLDivElement
+          ) {
+            container_break_time.style.display = "none";
+            container_task.style.display = "block";
+          }
+          const notif = {
+            title: "Istirahat Selesai",
+            description: "Saatnya lanjut",
+          };
+          showNotification(notif.title, notif.description);
+        }
+      }, 1000);
+    }
+
     return () => {
       if (timerRef.current) {
         clearInterval(timerRef.current);
@@ -1060,109 +1204,96 @@ const TodoTimer = ({
         document.title = "Todo";
       }
     };
-  }, [active_task]); // Make sure the effect reruns when active_task changes
+  }, [break_time, active_task]); // Make sure the effect reruns when active_task changes
 
   return (
     <div className="flex items-start justify-between gap-x-3 px-4 md:gap-x-5 h-[110px]">
       <div className="flex items-start gap-6 md:gap-8">
         <div
           style={{ animationDelay: `0.05s` }}
-          className="animate-roll-reveal [animation-fill-mode:backwards] w-[90px] rounded-full dark:bg-muted"
+          className="animate-roll-reveal [animation-fill-mode:backwards] w-[90px] rounded-full bg-secondary/50 dark:bg-muted"
         >
           <div className="relative">
             <div className="absolute flex h-full w-full justify-center">
               <div className="flex flex-col justify-center items-center">
-                <button className="z-10 mx-auto cursor-pointer text-green-500 hidden">
-                  <Coffee />
-                </button>
-                {(pauseTodo || active_task) && (
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className={`[&_svg]:size-6 transition-all duration-500 ease-in-out animate-roll-reveal [animation-fill-mode:backwards] z-10 mx-auto p-0 rounded-full`}
-                    onClick={
-                      active_task
-                        ? () => {
-                            const last_session_index =
-                              active_task?.sessions?.length - 1;
-                            const last_session =
-                              active_task?.sessions[last_session_index];
-                            const last_start = last_session?.log
-                              ?.filter((d) => d.name === "start") // Memfilter log yang bernama "start"
-                              .slice(-1)[0]; // Mengambil elemen terakhir
+                {break_time ? (
+                  <Coffee className="text-chart-1" />
+                ) : (
+                  (active_task || activeTaskRef.current) && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className={`[&_svg]:size-6 transition-all duration-500 ease-in-out animate-roll-reveal [animation-fill-mode:backwards] z-10 mx-auto p-0 rounded-full`}
+                      onClick={
+                        active_task
+                          ? () => {
+                              const last_session_index =
+                                active_task?.sessions?.length - 1;
+                              const last_session =
+                                active_task?.sessions[last_session_index];
 
-                            const count_pause = last_session?.log?.filter(
-                              (d) => d.name === "pause",
-                            ).length; // Memfilter log yang bernama "start"
-                            if (count_pause === 2)
-                              return toast({
-                                title: "Error",
-                                description: `Maximal paused only two times`,
-                              });
-                            if (!last_start) return;
+                              dispatch(
+                                updateSessionTask({
+                                  id: active_task.id,
+                                  key: date.timestamp,
+                                  updated_session_task: {
+                                    id: last_session,
+                                  },
+                                }),
+                              );
 
-                            const elapsed_time = Date.now() - last_start.time;
+                              const circleElement =
+                                document.getElementById("progress-circle");
+                              if (circleElement) {
+                                circleElement.setAttribute(
+                                  "stroke-dashoffset",
+                                  "0",
+                                );
+                              }
 
-                            dispatch(
-                              updateSessionTask({
-                                id: active_task.id,
-                                key: date.timestamp,
-                                updated_session_task: {
-                                  id: last_session.id,
-                                  done: false,
-                                  elapsed_time:
-                                    elapsed_time + last_session.elapsed_time,
-                                  log: [
-                                    ...last_session.log,
-                                    { time: Date.now(), name: "pause" },
-                                  ],
-                                },
-                              }),
-                            );
-                          }
-                        : () => {
-                            const last_session_index =
-                              pauseTodo?.sessions?.length - 1;
-                            const last_session =
-                              pauseTodo?.sessions[last_session_index];
-                            dispatch(
-                              updateSessionTask({
-                                id: pauseTodo.id,
-                                key: date.timestamp,
-                                updated_session_task: {
-                                  id: last_session.id,
-                                  elapsed_time: last_session.elapsed_time,
-                                  done: false,
-                                  log: [
-                                    ...last_session.log,
-                                    { time: Date.now(), name: "start" },
-                                  ],
-                                },
-                              }),
-                            );
-                          }
-                    }
-                    style={{ animationDelay: `0.1s` }}
-                  >
-                    {active_task ? (
-                      <Pause
-                        style={{ animationDelay: `0.3s` }}
-                        className={cn(
-                          active_task &&
-                            "animate-roll-reveal [animation-fill-mode:backwards]",
-                        )}
-                      />
-                    ) : (
-                      pauseTodo && (
-                        <Play
+                              const timerFields =
+                                document.querySelectorAll(".todo-progress");
+                              for (const timerField of timerFields) {
+                                if (timerField instanceof HTMLDivElement) {
+                                  timerField.innerHTML = "00:00";
+                                }
+                              }
+                              activeTaskRef.current = null;
+                            }
+                          : () => {
+                              dispatch(
+                                updateSessionTask({
+                                  id: activeTaskRef.current?.id,
+                                  key: date.timestamp,
+                                  updated_session_task: {
+                                    id: new Date().toISOString(),
+                                  },
+                                }),
+                              );
+                            }
+                      }
+                      style={{ animationDelay: `0.1s` }}
+                    >
+                      {active_task ? (
+                        <Pause
+                          style={{ animationDelay: `0.3s` }}
                           className={cn(
-                            !active_task &&
-                              "animate-slide-top [animation-fill-mode:backwards]",
+                            active_task &&
+                              "animate-roll-reveal [animation-fill-mode:backwards]",
                           )}
                         />
-                      )
-                    )}
-                  </Button>
+                      ) : (
+                        activeTaskRef.current && (
+                          <Play
+                            className={cn(
+                              !activeTaskRef.current &&
+                                "animate-slide-top [animation-fill-mode:backwards]",
+                            )}
+                          />
+                        )
+                      )}
+                    </Button>
+                  )
                 )}
                 <div
                   style={{ animationDelay: `0.1s` }}
@@ -1174,7 +1305,10 @@ const TodoTimer = ({
             </div>
             <div
               style={{ animationDelay: `0.1s` }}
-              className="animate-roll-reveal [animation-fill-mode:backwards] text-chart-2"
+              className={cn(
+                "animate-roll-reveal [animation-fill-mode:backwards] text-chart-2",
+                break_time ? "text-chart-1" : "text-chart-2",
+              )}
             >
               <svg
                 width={90}
@@ -1208,35 +1342,6 @@ const TodoTimer = ({
                   className="transition-all duration-500 ease-in-out"
                 />
               </svg>
-              {/*<svg
-                width={90}
-                height={90}
-                xmlns="http://www.w3.org/2000/svg"
-                className="-rotate-90"
-              >
-                <circle
-                  cx={45}
-                  cy={45}
-                  r={40}
-                  fill="none"
-                  className="stroke-accent dark:stroke-primary"
-                  strokeWidth={10}
-                  strokeDasharray="251.32741228718345"
-                />
-                <circle
-                  id="progress-circle" // ID untuk mempermudah akses
-                  cx={45}
-                  cy={45}
-                  r={radius}
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth={5}
-                  strokeDasharray={circumference}
-                  strokeDashoffset="0"
-                  strokeLinecap="round"
-                  className="transition-all duration-500 ease-in-out"
-                />
-              </svg>*/}
             </div>
           </div>
         </div>
@@ -1257,18 +1362,16 @@ const TodoTimer = ({
             <div className="h-2.5">
               <div className="absolute flex gap-1">
                 {new Array(16).fill(null).map((_, index) => {
-                  const active = active_task?.sessions?.filter(
-                    (d) => d?.done,
-                  )?.length;
+                  const active = active_task?.sessions?.length - 1;
 
                   return (
                     <div className="relative inline-flex gap-1" key={index}>
                       <div
                         className={cn(
                           "h-2.5 w-2.5 shrink-0 cursor-pointer rounded-full ",
-                          active >= index + 1
+                          active >= index
                             ? "bg-chart-2"
-                            : active_task?.target_sessions >= index + 1
+                            : active_task?.target_sessions >= index
                               ? "bg-primary/30"
                               : active_task.status === "progress" &&
                                   active_task === index
@@ -1304,34 +1407,15 @@ const TodoTimer = ({
                       "Sesion " + (sessionData.length + 1) + " has completed",
                   };
                   showNotification(notif.title, notif.description);
-                  const task = active_task;
 
-                  const last_session_index = task?.sessions?.length - 1;
-                  const last_session = task?.sessions[last_session_index];
-                  const last_start = last_session?.log
-                    ?.filter((d) => d.name === "start") // Memfilter log yang bernama "start"
-                    .slice(-1)[0]; // Mengambil elemen terakhir
-
-                  const elapsed_time = Date.now() - last_start.time;
-                  dispatch(
-                    updateSessionTask({
-                      id: todo.id,
-                      key: date.timestamp,
-                      updated_session_task: {
-                        id: last_session.id,
-                        elapsed_time: elapsed_time + last_session.elapsed_time,
-                        done: true,
-                      },
-                    }),
-                  );
                   dispatch(
                     updateTask({
                       id: active_task.id,
                       key: date.timestamp,
                       updated_task: {
                         title: active_task.title,
-                        status: "done",
-                        done: Date.now(),
+                        status: "completed",
+                        completed_at: new Date().toISOString(),
                       },
                     }),
                   );
@@ -1361,55 +1445,104 @@ const TodoTimer = ({
                 Cancel
               </button>
             </div>
-            <div className="flex gap-2 invisible">
-              <button
-                className="items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 text-destructive-foreground flex h-auto gap-1 bg-orange-600 px-2 py-1 hover:bg-orange-500"
-                data-testid="break-5-mins"
+          </div>
+        )}
+        {!break_time && activeTaskRef.current && !active_task && (
+          <div
+            style={{ animationDelay: `0.05s` }}
+            className="animate-roll-reveal [animation-fill-mode:backwards] relative w-full"
+          >
+            <div className="font-bold md:text-xl line-clamp-1 max-w-[250px]">
+              {activeTaskRef.current?.title !== "" ? (
+                <div
+                  dangerouslySetInnerHTML={{
+                    __html: activeTaskRef.current.title,
+                  }}
+                />
+              ) : (
+                "Untitled"
+              )}
+            </div>
+
+            <div className="h-2.5">
+              <div className="absolute flex gap-1">
+                {new Array(16).fill(null).map((_, index) => {
+                  const active = activeTaskRef.current?.sessions?.length;
+
+                  return (
+                    <div className="relative inline-flex gap-1" key={index}>
+                      <div
+                        className={cn(
+                          "h-2.5 w-2.5 shrink-0 cursor-pointer rounded-full ",
+                          active >= index + 1
+                            ? "bg-chart-2"
+                            : activeTaskRef.current?.target_sessions >=
+                                index + 1
+                              ? "bg-primary/30"
+                              : activeTaskRef.current.status === "progress" &&
+                                  activeTaskRef.current === index
+                                ? "bg-chart-1"
+                                : "bg-muted hidden group-hover:block transition-all duration-300 animate-roll-reveal [animation-fill-mode:backwards] ",
+                        )}
+                      />
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+            <div className="mt-1 text-sm">
+              {activeTaskRef.current?.sessions?.length} dari{" "}
+              {activeTaskRef.current?.target_sessions} target sesi
+            </div>
+            <div className="mt-2 flex w-full flex-col gap-2 pr-14 md:flex-row md:items-center md:pr-0">
+              <Button
+                className="bg-chart-2 hover:bg-chart-2/90"
+                onClick={() => {
+                  const todo = activeTaskRef.current as Task;
+                  const sessionData = todo.sessions ? [...todo.sessions] : []; // Copy the old sessions array, or start with an empty array
+
+                  const notif = {
+                    title: "Saatnya istirahat",
+                    description:
+                      "Sesion " + (sessionData.length + 1) + " has completed",
+                  };
+                  showNotification(notif.title, notif.description);
+                  dispatch(
+                    updateTask({
+                      id: activeTaskRef.current.id,
+                      key: date.timestamp,
+                      updated_task: {
+                        title: activeTaskRef.current.title,
+                        status: "completed",
+                        completed_at: new Date().toISOString(),
+                      },
+                    }),
+                  );
+                }}
               >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width={18}
-                  height={18}
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth={2}
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className="lucide lucide-coffee"
-                >
-                  <path d="M10 2v2" />
-                  <path d="M14 2v2" />
-                  <path d="M16 8a1 1 0 0 1 1 1v8a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4V9a1 1 0 0 1 1-1h14a4 4 0 1 1 0 8h-1" />
-                  <path d="M6 2v2" />
-                </svg>
-                5 mins
-              </button>
-              <button
-                className="items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 text-destructive-foreground flex h-auto gap-1 bg-orange-600 px-2 py-1 hover:bg-orange-500"
-                data-testid="break-15-mins"
+                <CircleCheckBig />
+                Mark as Done
+              </Button>
+              <Button
+                onClick={() => set_break_time(Date.now())}
+                variant="destructive"
               >
-                <div className="flex gap-1">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width={18}
-                    height={18}
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth={2}
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    className="lucide lucide-coffee"
-                  >
-                    <path d="M10 2v2" />
-                    <path d="M14 2v2" />
-                    <path d="M16 8a1 1 0 0 1 1 1v8a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4V9a1 1 0 0 1 1-1h14a4 4 0 1 1 0 8h-1" />
-                    <path d="M6 2v2" />
-                  </svg>
-                </div>
-                15 mins
-              </button>
+                <Coffee /> 5 mins
+              </Button>
+            </div>
+          </div>
+        )}
+        {break_time && (
+          <div
+            style={{ animationDelay: `0.05s` }}
+            className="animate-roll-reveal [animation-fill-mode:backwards] relative w-full"
+          >
+            <div className="font-bold md:text-xl line-clamp-1 max-w-[250px]">
+              Nikmati istirahatmu!
+            </div>
+
+            <div className="mt-1 text-sm">
+              Lupakan sejenak tasks yang ada, relax!
             </div>
           </div>
         )}
@@ -2237,7 +2370,7 @@ function StatusDot({ color }: { color?: string }) {
   return <Squircle className="fill-primary text-primary" />;
 }
 
-function SelectFilter({ date, setValue, tasks }) {
+function SelectFilter({ data, date, setValue, tasks }) {
   const taskCategories = [
     { label: "Urgent", color: "#e11d48" },
     { label: "High Priority", color: "#f97316" },
@@ -2348,7 +2481,9 @@ function KanbanBoardTasks({ data, tasks: _tasks, date, active_task }) {
   }, 3000); // Set delay to 3 seconds
 
   useEffect(() => {
-    debounceOnChange(); // Call the debounced function whenever tasks change
+    if (JSON.stringify(_tasks) !== JSON.stringify(tasks)) {
+      debounceOnChange(); // Call the debounced function whenever tasks change
+    }
     // Cleanup the debounce function when the component is unmounted or before next render
     return () => {
       debounceOnChange.cancel();
@@ -2742,11 +2877,32 @@ const ChildTask = React.memo(
   ({ index, date, active_task, task, children }: MainTaskCardProps) => {
     const todo = task;
 
+    const sessionDuration = 25 * 60 * 1000; // 25 menit
     const totalSessionTime = todo.sessions.reduce(
-      (total_elapsed_time, session) =>
-        total_elapsed_time + session?.elapsed_time || 0,
+      (sessionTotal, session, index, sessions) => {
+        // Pastikan session time lebih besar dari Date.now()
+        if (session + sessionDuration < Date.now()) {
+          // Menjumlahkan durasi sesi biasa (25 menit) ke sessionTotal
+          sessionTotal += sessionDuration;
+
+          // Jika ini adalah sesi terakhir dan ada completed_at
+          if (index === sessions.length - 1 && todo.completed_at) {
+            const lastSessionTime = sessions[index];
+            const timeDifference = todo.completed_at - lastSessionTime;
+
+            // Jika jarak antara completed_at dan waktu sesi terakhir kurang dari durasi normal (25 menit),
+            // kurangi durasi sesi terakhir
+            if (timeDifference > 0 && timeDifference < sessionDuration) {
+              sessionTotal -= sessionDuration - timeDifference; // Kurangi sisa waktu dari sesi terakhir
+            }
+          }
+        }
+
+        return sessionTotal;
+      },
       0,
     );
+
     const is_today = date.is_today;
     const dispatch = useAppDispatch();
 
@@ -2762,7 +2918,7 @@ const ChildTask = React.memo(
               ? "text-muted-foreground bg-muted/20 blur-sm transition-all duration-300"
               : active_task && todo.status === "progress"
                 ? ""
-                : todo.status === "done"
+                : todo.status === "completed"
                   ? ""
                   : "",
           )}
@@ -2772,8 +2928,10 @@ const ChildTask = React.memo(
               className={cn(
                 "p-6 px-3 py-1.5 space-between flex gap-4 items-center flex-row border-b-2 border-secondary relative",
                 active_task && todo.status === "progress"
-                  ? " bg-gradient-to-r from-accent bg-muted"
-                  : " bg-gradient-to-l from-background bg-secondary",
+                  ? " bg-gradient-to-r from-accent to-muted"
+                  : " bg-gradient-to-l from-background to-secondary",
+                todo.status === "completed" &&
+                  " bg-gradient-to-r from-background to-chart-2/40",
               )}
             >
               <div className="flex items-center gap-x-2">{children}</div>
@@ -2796,152 +2954,51 @@ const ChildTask = React.memo(
                   date={date}
                   active_task={active_task}
                 />
-                {/*<DropdownMenu modal={true}>
-                  <DropdownMenuTrigger>
-                    <EllipsisVertical className="w-4 h-4" />
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-[200px]">
-                    <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                    <DropdownMenuGroup>
-                      <DropdownMenuItem
-                        onClick={() => dispatch(addSubTask({ id: todo.id }))}
-                      >
-                        <Plus /> Add Subtask
-                      </DropdownMenuItem>
-                      {todo.status !== "done" ? (
-                        <DropdownMenuItem
-                          onClick={() => {
-                            if (active_task) {
-                              const todo = active_task as Task;
-                              const sessionData = todo.sessions
-                                ? [...todo.sessions]
-                                : []; // Copy the old sessions array, or start with an empty array
-
-                              const notif = {
-                                title: "Saatnya istirahat",
-                                description:
-                                  "Sesion " +
-                                  (sessionData.length + 1) +
-                                  " has completed",
-                              };
-                              showNotification(notif.title, notif.description);
-
-                              const last_session_index =
-                                task?.sessions?.length - 1;
-                              const last_session =
-                                task?.sessions[last_session_index];
-                              const last_start = last_session?.log
-                                ?.filter((d) => d.name === "start") // Memfilter log yang bernama "start"
-                                .slice(-1)[0]; // Mengambil elemen terakhir
-
-                              const elapsed_time = Date.now() - last_start.time;
-                              dispatch(
-                                updateSessionTask({
-                                  id: todo.id,
-                                  key: date.timestamp,
-                                  updated_session_task: {
-                                    id: last_session.id,
-                                    elapsed_time:
-                                      elapsed_time + last_session.elapsed_time,
-                                    done: true,
-                                  },
-                                }),
-                              );
-                            }
-                            dispatch(
-                              updateTask({
-                                id: task.id,
-                                key: date.timestamp,
-                                updated_task: {
-                                  title: todo.title,
-                                  status: "done",
-                                  done: Date.now(),
-                                },
-                              }),
-                            );
-                          }}
-                        >
-                          <CircleCheckBig className="w-5 h-5" />
-                          Mark as done
-                        </DropdownMenuItem>
-                      ) : (
-                        <DropdownMenuItem
-                          onClick={() => {
-                            dispatch(
-                              updateTask({
-                                id: task.id,
-                                key: date.timestamp,
-                                updated_task: {
-                                  title: todo.title,
-                                  status: "draft",
-                                  done: null,
-                                },
-                              }),
-                            );
-                          }}
-                        >
-                          <CirclePlus className="rotate-45 w-5 h-5" />
-                          Unmark as done
-                        </DropdownMenuItem>
-                      )}
-                      <DropdownMenuSeparator />
-
-                      <AlertDialogProvider>
-                        <DeleteTask
-                          task_id={todo.id}
-                          task_title={todo.title}
-                          timestamp={date.timestamp}
-                        />
-                      </AlertDialogProvider>
-                    </DropdownMenuGroup>
-                  </DropdownMenuContent>
-                </DropdownMenu>*/}
               </div>
             </div>
-            <div className="p-2">
+            <div className="p-2 relative">
+              {todo.status === "completed" && (
+                <CircleCheckBig className="absolute top-0 -right-4 w-28 h-28 text-chart-2 dark:text-chart-2 opacity-40" />
+              )}
               <div className="flex items-start gap-1 px-1">
                 {is_today ? (
                   <React.Fragment>
-                    {todo.status === "done" ? (
-                      <CircleCheckBig className="w-6 h-6 text-primary rounded-full" />
+                    {todo.status === "completed" ? (
+                      <CircleCheckBig className="w-6 h-6 text-chart-2 rounded-full" />
                     ) : todo.status === "progress" ? (
                       <button
                         onClick={() => {
-                          const last_session_index = task?.sessions?.length - 1;
+                          const last_session_index =
+                            active_task?.sessions?.length - 1;
                           const last_session =
-                            task?.sessions[last_session_index];
-                          const last_start = last_session?.log
-                            ?.filter((d) => d.name === "start") // Memfilter log yang bernama "start"
-                            .slice(-1)[0]; // Mengambil elemen terakhir
-
-                          const count_pause = last_session?.log?.filter(
-                            (d) => d.name === "pause",
-                          ).length; // Memfilter log yang bernama "start"
-                          if (count_pause === 2)
-                            return toast({
-                              title: "Error",
-                              description: `Maximal paused only two times`,
-                            });
-                          if (!last_start) return;
-
-                          const elapsed_time = Date.now() - last_start.time;
+                            active_task?.sessions[last_session_index];
 
                           dispatch(
                             updateSessionTask({
-                              id: todo.id,
+                              id: active_task.id,
                               key: date.timestamp,
                               updated_session_task: {
-                                id: last_session.id,
-                                done: false,
-                                elapsed_time:
-                                  elapsed_time + last_session.elapsed_time,
-                                log: [
-                                  ...last_session.log,
-                                  { time: Date.now(), name: "pause" },
-                                ],
+                                id: last_session,
                               },
                             }),
                           );
+
+                          const circleElement =
+                            document.getElementById("progress-circle");
+                          if (circleElement) {
+                            circleElement.setAttribute(
+                              "stroke-dashoffset",
+                              "0",
+                            );
+                          }
+
+                          const timerFields =
+                            document.querySelectorAll(".todo-progress");
+                          for (const timerField of timerFields) {
+                            if (timerField instanceof HTMLDivElement) {
+                              timerField.innerHTML = "00:00";
+                            }
+                          }
                         }}
                         className={cn(
                           "flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-destructive text-destructive-foreground",
@@ -2956,45 +3013,15 @@ const ChildTask = React.memo(
                         <button
                           type="button"
                           onClick={() => {
-                            const last_session_index =
-                              task?.sessions?.length - 1;
-                            const last_session =
-                              task?.sessions[last_session_index];
-                            const last_pause = last_session?.log
-                              ?.filter((d) => d.name === "pause") // Memfilter log yang bernama "start"
-                              .slice(-1)[0]; // Mengambil elemen terakhir
-                            const last_done = last_session?.done;
-
-                            if (!last_session || last_done) {
-                              dispatch(
-                                updateSessionTask({
-                                  id: todo.id,
-                                  key: date.timestamp,
-                                  updated_session_task: {
-                                    id: Date.now(),
-                                    elapsed_time: 0,
-                                    done: false,
-                                    log: [{ time: Date.now(), name: "start" }],
-                                  },
-                                }),
-                              );
-                            } else {
-                              dispatch(
-                                updateSessionTask({
-                                  id: todo.id,
-                                  key: date.timestamp,
-                                  updated_session_task: {
-                                    id: last_session.id,
-                                    elapsed_time: last_session.elapsed_time,
-                                    done: false,
-                                    log: [
-                                      ...last_session.log,
-                                      { time: Date.now(), name: "start" },
-                                    ],
-                                  },
-                                }),
-                              );
-                            }
+                            dispatch(
+                              updateSessionTask({
+                                id: todo.id,
+                                key: date.timestamp,
+                                updated_session_task: {
+                                  id: new Date().toISOString(),
+                                },
+                              }),
+                            );
                           }}
                           className={cn(
                             "flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary pl-0.5 text-primary-foreground",
@@ -3050,9 +3077,7 @@ const ChildTask = React.memo(
                   <div className="flex items-end">
                     <div className="flex items-center justify-start gap-1 h-4">
                       {new Array(16).fill(null).map((_, index) => {
-                        const active = todo?.sessions?.filter(
-                          (d) => d?.done,
-                        )?.length;
+                        const active = task?.sessions?.length - 1;
 
                         return (
                           <div
@@ -3076,9 +3101,9 @@ const ChildTask = React.memo(
                               style={{ animationDelay: `${index * 0.03}s` }}
                               className={cn(
                                 "h-[12px] w-[12px] shrink-0 cursor-pointer rounded-full ",
-                                active >= index + 1
+                                active >= index
                                   ? "bg-chart-2"
-                                  : todo?.target_sessions >= index + 1
+                                  : todo?.target_sessions >= index
                                     ? "bg-primary/30"
                                     : todo.status === "progress" &&
                                         active === index
@@ -3127,15 +3152,14 @@ const ChildTask = React.memo(
                               <History className="w-4 h-4 text-muted-foreground" />
                             </PopoverTrigger>
                             <PopoverContent className="max-h-[40vh] overflow-y-auto py-0">
-                              <TimelineInfo sessions={task.sessions} />
+                              <TimelineInfo
+                                sessions={task.sessions}
+                                completed_at={task.completed_at}
+                              />
                             </PopoverContent>
                           </Popover>
                         )}
-                      <div
-                        className={
-                          todo?.status === "progress" ? "todo-progress" : ""
-                        }
-                      >
+                      <div className="text-sm">
                         {new Date(totalSessionTime).toISOString().substr(11, 8)}
                       </div>
                     </div>
@@ -3164,10 +3188,6 @@ const ChildTask = React.memo(
               </div>
             </div>
           </div>
-          {todo.status === "done" && (
-            <CircleCheckBig className="absolute top-0 -right-4 w-28 h-28 text-primary dark:text-primary opacity-30" />
-          )}
-          <div className=" "></div>
         </div>
 
         {todo.sub_tasks.length > 0 && (
@@ -3309,6 +3329,7 @@ const ChildSubTask = React.memo(
                     updated_sub_task: {
                       title: subtask.title,
                       checked: e.target.checked,
+                      completed_at: e.target.checked ? Date.now() : null,
                     },
                   }),
                 );
@@ -3491,11 +3512,55 @@ const getSessionTimes = (session: any, index: number): Session[] => {
   return sessions;
 };
 
-const TimelineInfo: React.FC<{ sessions: any[] }> = ({ sessions }) => {
+const TimelineInfo: React.FC<{ sessions: any[] }> = ({
+  sessions,
+  completed_at,
+}) => {
   // Mengambil sesi yang sudah diformat
-  const formattedSessions = sessions.flatMap((session, index) =>
-    getSessionTimes(session, index),
-  );
+  function adjustSessions(sessions: string[], completedAt: string): string[] {
+    const intervalInMillis = 25 * 60 * 1000; // 25 minutes in milliseconds
+    const formattedSessions: string[] = [];
+
+    // Convert completedAt string to Date object
+    const completedAtDate = new Date(completedAt);
+
+    // Loop through all the sessions
+    for (let i = 0; i < sessions.length; i++) {
+      const startTime = new Date(sessions[i]); // Convert session start time (ISO string) to Date
+      let endTime = new Date(startTime.getTime() + intervalInMillis); // Add 25 minutes to start time
+
+      // Format start time as HH:mm
+      const startStr = `${startTime.getHours().toString().padStart(2, "0")}:${startTime.getMinutes().toString().padStart(2, "0")}`;
+
+      // Format end time as HH:mm or adjust it based on completedAt
+      let endStr = "";
+
+      // For the last session, check if it should be adjusted based on completedAt
+      if (i === sessions.length - 1) {
+        if (endTime > completedAtDate) {
+          // If the session end time is greater than completedAt, adjust it to completedAt
+          endStr = `${completedAtDate.getHours().toString().padStart(2, "0")}:${completedAtDate.getMinutes().toString().padStart(2, "0")}`;
+        } else {
+          // Otherwise, keep the normal end time
+          endStr = `${endTime.getHours().toString().padStart(2, "0")}:${endTime.getMinutes().toString().padStart(2, "0")}`;
+        }
+      } else {
+        // For other sessions, just use the calculated end time
+        endStr = `${endTime.getHours().toString().padStart(2, "0")}:${endTime.getMinutes().toString().padStart(2, "0")}`;
+      }
+
+      // Add the formatted session to the result array
+      formattedSessions.push(`${startStr} - ${endStr}`);
+    }
+
+    return formattedSessions;
+  }
+
+  const adjustedSessions = adjustSessions(sessions, completed_at);
+
+  // Example usage
+
+  // Example usage
 
   return (
     <div>
@@ -3503,24 +3568,14 @@ const TimelineInfo: React.FC<{ sessions: any[] }> = ({ sessions }) => {
         role="list"
         className="divide-y divide-gray-200 bg-background p-2 rounded-md"
       >
-        {formattedSessions.map((sessionInfo, index) => (
+        {adjustedSessions.map((sessionInfo, index) => (
           <li key={index} className="py-2">
             <div className="flex space-x-3">
               <div className="flex-1 space-y-1">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-sm font-medium">{sessionInfo.name}</h3>
-                  <p className="text-sm text-gray-500">
-                    {sessionInfo.duration}
-                  </p>
+                  <h3 className="text-sm font-medium">Session {index + 1}</h3>
+                  <p className="text-sm ">{sessionInfo}</p>
                 </div>
-                {sessionInfo.timeRange?.map((d, index) => (
-                  <p key={index} className="text-sm text-gray-500">
-                    <span>{d.start}</span>
-                    <span>-</span>
-                    <span>{d.end}</span>
-                    <span className="text-xs font-bold"> ( {d.duration} )</span>
-                  </p>
-                ))}
               </div>
             </div>
           </li>
@@ -4008,7 +4063,7 @@ const DropdownMenuTask = ({ todo, date, active_task }) => {
         <DropdownMenuItem onClick={() => dispatch(addSubTask({ id: todo.id }))}>
           <Plus /> Add Subtask
         </DropdownMenuItem>
-        {todo.status !== "done" ? (
+        {todo.status !== "completed" ? (
           <DropdownMenuItem
             className="text-green-600 focus:text-green-600 dark:text-green-400 dark:focus:text-white focus:bg-green-100 dark:focus:bg-green-900"
             onClick={() => {
@@ -4023,21 +4078,14 @@ const DropdownMenuTask = ({ todo, date, active_task }) => {
                 };
                 showNotification(notif.title, notif.description);
 
-                const last_session_index = task?.sessions?.length - 1;
-                const last_session = task?.sessions[last_session_index];
-                const last_start = last_session?.log
-                  ?.filter((d) => d.name === "start") // Memfilter log yang bernama "start"
-                  .slice(-1)[0]; // Mengambil elemen terakhir
-
-                const elapsed_time = Date.now() - last_start.time;
                 dispatch(
-                  updateSessionTask({
-                    id: todo.id,
+                  updateTask({
+                    id: todo.current.id,
                     key: date.timestamp,
-                    updated_session_task: {
-                      id: last_session.id,
-                      elapsed_time: elapsed_time + last_session.elapsed_time,
-                      done: true,
+                    updated_task: {
+                      title: todo.current.title,
+                      status: "completed",
+                      completed_at: new Date().toISOString(),
                     },
                   }),
                 );
@@ -4048,8 +4096,8 @@ const DropdownMenuTask = ({ todo, date, active_task }) => {
                   key: date.timestamp,
                   updated_task: {
                     title: todo.title,
-                    status: "done",
-                    done: Date.now(),
+                    status: "completed",
+                    completed_at: new Date().toISOString(),
                   },
                 }),
               );
@@ -4067,8 +4115,8 @@ const DropdownMenuTask = ({ todo, date, active_task }) => {
                   key: date.timestamp,
                   updated_task: {
                     title: todo.title,
-                    status: "draft",
-                    done: null,
+                    status: "pending",
+                    completed_at: null,
                   },
                 }),
               );
@@ -4316,7 +4364,7 @@ function ComboboxPopoverFilter({ data, handler }) {
     <div className="flex items-center space-x-4">
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
-          <Button variant="ghost" className="[&_svg]:size-5">
+          <Button variant="ghost" className="[&_svg]:size-4">
             {selectedStatus ? (
               <>
                 <span className="pb-0.5 font-medium">
@@ -4327,7 +4375,7 @@ function ComboboxPopoverFilter({ data, handler }) {
             ) : (
               <React.Fragment>
                 <span className="pb-0.5 font-medium">Filter task</span>
-                <Filter className="ml-2 text-muted-foreground" />
+                <ChevronsUpDown className="text-muted-foreground" />
               </React.Fragment>
             )}
           </Button>

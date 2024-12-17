@@ -1,4 +1,6 @@
 import Kanban from "./routes/kanban/index.tsx";
+import store from "./store/store";
+import { Provider } from "react-redux";
 import Calculator from "./routes/calculator/index.tsx";
 import Muslim from "./routes/muslim/index.tsx";
 import {
@@ -68,7 +70,11 @@ const router = createBrowserRouter([
       },
       {
         path: "/daily",
-        element: <Layout />,
+        element: (
+          <Provider store={store}>
+            <Layout />
+          </Provider>
+        ),
         children: [
           {
             path: "/daily",
@@ -99,17 +105,13 @@ const router = createBrowserRouter([
 
 import { Toaster } from "@/components/ui/toaster";
 import { ThemeProvider } from "@/components/custom/theme-provider";
-import store from "./store/store";
-import { Provider } from "react-redux";
 
 const Main = () => {
   return (
-    <Provider store={store}>
-      <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
-        <RouterProvider router={router} />
-        <Toaster />
-      </ThemeProvider>
-    </Provider>
+    <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
+      <RouterProvider router={router} />
+      <Toaster />
+    </ThemeProvider>
   );
 };
 
