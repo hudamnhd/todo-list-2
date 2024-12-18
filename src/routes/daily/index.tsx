@@ -163,9 +163,44 @@ async function load_data_daily_tasks() {
   // initial_data = false;
   // return;
 
+  const now = new Date();
+
+  // Fungsi untuk memperbarui status
+  function updateStatus(data: Data): Data {
+    for (const date in data) {
+      const tasks = data[date];
+
+      for (const task of tasks) {
+        // Cek jika status progress
+        if (task.status === "progress") {
+          // Ambil waktu terakhir dari sessions
+          const lastSessionTime = new Date(
+            task.sessions[task.sessions.length - 1],
+          );
+
+          // Jika sudah lebih dari 25 menit
+          const diffMinutes =
+            (now.getTime() - lastSessionTime.getTime()) / 1000 / 60;
+
+          if (diffMinutes > 25) {
+            task.status = "pending";
+            console.log(
+              `Status updated to 'pending' for task ${task.id} due to timeout.`,
+            );
+          } else {
+            console.log(`No status update needed for task ${task.id}.`);
+          }
+        }
+      }
+    }
+
+    return data;
+  }
+
   try {
     if (initialTasks) {
-      store.dispatch(setTasks(initialTasks));
+      const updatedData = updateStatus(initialTasks);
+      store.dispatch(setTasks(updatedData));
     } else {
       store.dispatch(setTasks({}));
     }
@@ -555,6 +590,7 @@ const TaskFirst = () => {
   if (!initial_data) {
     return (
       <div className="mx-auto max-w-3xl w-full h-[100vh] border-x p-2.5 sm:p-4">
+        {/*<Debug data={todos} />*/}
         <TodoNavigator data={todos} />
       </div>
     );
